@@ -1,0 +1,27 @@
+{
+    "name": "node-red-debugger",
+    "version": "1.0.0",
+    "description": "A flow debugger for Node-RED 2.x",
+    "scripts": {
+        "build": "(tsc || exit 1) && npm run tslint && npm run copyAssets",
+        "tslint": "tslint -c tslint.json -p tsconfig.json",
+        "copyAssets": "node scripts/copy-static-assets.js",
+        "dev": "nodemon --exec 'npm run build'  -i dist -e 'ts html'",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [],
+    "author": "Nick O'Leary <nick.oleary@gmail.com>",
+    "license": "Apache-2",
+    "node-red": {
+        "version": ">=2.0.0",
+        "plugins": {
+            "flow-debugger": "dist/flow-debugger.js"
+        }
+    },
+    "devDependencies": {
+        "@types/node": "^15.0.1",
+        "tslint": "^6.1.3",
+        "typescript": "^4.2.4",
+        "html-minifier": "^4.0.0"
+    }
+}

@@ -1,0 +1,971 @@
+<style>
+    .red-ui-flow-debugger {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    .red-ui-flow-debugger-stack {
+        overflow-y: scroll;
+    }
+    .red-ui-flow-debugger.disabled .red-ui-sidebar-header > :not(:first-child) {
+        display: none;
+    }
+    .red-ui-flow-debugger.disabled .red-ui-flow-debugger-stack {
+        display: none;
+    }
+    .red-ui-flow-debugger .red-ui-sidebar-header {
+        flex: 0 0 auto;
+        display: flex;
+    }
+    .red-ui-flow-debugger .red-ui-sidebar-header > * {
+        flex-shrink: 0;
+    }
+    .red-ui-flow-debugger .red-ui-editableList-border {
+        border: none;
+        border-radius: 0;
+    }
+    .red-ui-flow-debugger .red-ui-editableList-container {
+        padding: 0;
+    }
+    .red-ui-flow-debugger .red-ui-editableList-container li {
+        padding: 0;
+    }
+    .red-ui-flow-debugger .red-ui-editableList-container li .red-ui-editableList-item-remove {
+        right: 3px;
+    }
+    .red-ui-flow-debugger-breakpoint-list .red-ui-editableList-item-content {
+        padding: 6px 8px;
+    }
+    .red-ui-flow-debugger-message-list .red-ui-editableList-item-content {
+        padding: 6px 0px;
+    }
+    .red-ui-flow-debugger-message .red-ui-debug-msg-meta {
+        display: flex;
+        padding-left: 10px;
+    }
+    .red-ui-flow-debugger-breakpoint {
+        user-select: none;
+        display: flex;
+        align-items: center;
+    }
+    .red-ui-flow-debugger .red-ui-editableList-container li.highlight {
+        background: #e6e6e6;
+    }
+    .red-ui-flow-debugger .red-ui-editableList-container li.pending {
+        opacity: 0.4;
+    }
+    .red-ui-flow-debugger-breakpoint input[type=checkbox] {
+        margin-top: 0;
+        margin-right: 4px;
+    }
+    .red-ui-flow-debugger-breakpoint > :nth-child(2) {
+        flex-grow: 1;
+        flex-shrink: 1;
+        overflow: hidden;
+    }
+    .red-ui-flow-debugger-breakpoint:not(.active) *:not(:first-child) {
+        opacity: 0.7;
+    }
+    .red-ui-flow-debugger-breakpoint-port {
+        padding-left: 5px;
+        font-size: 0.9em;
+        width: 55px;
+        flex-shrink: 0;
+    }
+
+    /* Flow Annotations */
+    .red-ui-flow-debugger-port-overlay {
+        cursor: pointer;
+        display: none;
+    }
+
+    .red-ui-flow-debugger-port-overlay-background {
+        fill: #fff;
+        stroke-width: 1;
+        stroke: #58d;
+    }
+
+    .red-ui-flow-debugger-port-overlay-background.red-ui-flow-debugger-port-overlay-pulse {
+        fill: none !important;
+        stroke-width: 1;
+        stroke: #58d;
+        animation: red-ui-flow-debugger-port-overlay-pulse-kf 0.6s linear;
+    }
+
+    @keyframes red-ui-flow-debugger-port-overlay-pulse-kf {
+        0%{
+            transform: scale(0.8);
+            opacity: 1;
+        }
+        50%{
+            opacity: 0.5;
+        }
+        70%{
+            opacity: 0.2;
+        }
+        100%{
+            transform: scale(2,1.5);
+            opacity: 0;
+        }
+    }
+
+    .red-ui-flow-debugger-port-overlay.active .red-ui-flow-debugger-port-overlay-background {
+        fill: #59e;
+        stroke: #36b;
+    }
+    .red-ui-flow-debugger-port-overlay.inactive .red-ui-flow-debugger-port-overlay-background {
+        fill: #def;
+        stroke: #59e;
+    }
+    .red-ui-flow-debugger-port-overlay.pending .red-ui-flow-debugger-port-overlay-background {
+        fill: #def;
+        stroke: #59e;
+        stroke-dasharray: 4 2;
+        opacity: 0.8;
+    }
+    .red-ui-flow-debugger-port-overlay.triggered .red-ui-flow-debugger-port-overlay-background {
+        stroke-width: 2;
+        stroke: #36ab3f;
+    }
+    /* .red-ui-flow-debugger-port-overlay.highlight .red-ui-flow-debugger-port-overlay-background {
+        stroke-width: 2;
+        stroke-dasharray: 4 2;
+        stroke: #ff7f0e;
+    } */
+    .red-ui-flow-debugger-port-overlay-highlight {
+        stroke-width: 1.5;
+        fill: none;
+        stroke-dasharray: 4 2;
+        stroke: #ff7f0e;
+        transform: scale(1.2, 1.5);
+
+    }
+
+    .red-ui-flow-debugger-port-overlay.pending,
+    .red-ui-flow-debugger-port-overlay.active,
+    .red-ui-flow-debugger-port-overlay.inactive,
+    .red-ui-flow-debugger-port-overlay.triggered,
+    .red-ui-flow-debugger-port-overlay.hasMessages {
+        display: inherit;
+    }
+    .red-ui-flow-debugger-port-overlay-label {
+        stroke-width: 0;
+        fill: #000;
+        font-size: 9pt;
+        text-anchor:end;
+    }
+    .red-ui-flow-debugger-port-overlay.active .red-ui-flow-debugger-port-overlay-label {
+        fill: #fff;
+    }
+
+    .red-ui-flow-debugger-notification {
+        display: flex;
+    }
+    .red-ui-flow-debugger-notification > .red-ui-flow-debugger-toolbar {
+        flex-grow: 1;
+        text-align: right;
+    }
+    .red-ui-flow-debugger-toolbar button {
+        width: 14px;
+    }
+
+    .red-ui-flow-debugger-message:hover .red-ui-flow-debugger-msg-tools {
+        display: inline;
+    }
+    .red-ui-flow-debugger-msg-tools {
+        position: absolute;
+        right: 5px;
+        display: none;
+    }
+</style>
+<script type="text/javascript">
+(function() {
+    var content;
+    function show() {
+        RED.sidebar.show("flow-debugger");
+    }
+
+    RED.plugins.registerPlugin("node-red-debugger", {
+        onadd: function() {
+            function parseLocation(location) {
+                var parts = /^(.*?)\/([^\/\[]+)\[(i|o)\]\[(\d+)\]$/.exec(location);
+
+                return {
+                    path: parts[1],
+                    id:parts[2],
+                    portType: parts[3]==='i'?"input":"output",
+                    portIndex: parts[4]
+                }
+            }
+            function updateQueueDepth(locationId, depth) {
+                var location = parseLocation(locationId);
+                queueDepths[location.id] = queueDepths[location.id] || { input: {}, output:{} }
+                if (queueDepths[location.id][location.portType][location.portIndex] !== depth) {
+                    queueDepths[location.id][location.portType][location.portIndex] = depth;
+                    if (annotations[location.id]) {
+                        var annotation = annotations[location.id][location.portType][location.portIndex];
+                        if (annotation) {
+                            annotation.pulse();
+                            if (depth > 0) {
+                                annotation.el.classList.add("hasMessages");
+                                annotation.label.textContent = depth;
+                            } else {
+                                annotation.el.classList.remove("hasMessages");
+                                annotation.label.textContent = "";
+                            }
+                        }
+                    }
+                }
+            }
+            function onNodeChange(node) {
+                if (breakpointsByNode[node.id]) {
+                    breakpointsByNode[node.id].forEach(function(bp) {
+                        var newLabel = RED.utils.createNodeIcon(node,true);
+                        bp.listLabel.replaceWith(newLabel);
+                        bp.listLabel = newLabel;
+                    });
+                }
+                if (messagesByNode[node.id]) {
+                    for (var msgId in messagesByNode[node.id]) {
+                        if (messagesByNode[node.id].hasOwnProperty(msgId)) {
+                            var newLabel = RED.utils.createNodeIcon(node,true);
+                            messagesByNode[node.id][msgId].listLabel.replaceWith(newLabel);
+                            messagesByNode[node.id][msgId].listLabel = newLabel;
+                        }
+                    }
+                }
+            }
+            function onNodeRemove(node) {
+                if (breakpointsByNode[node.id]) {
+                    breakpointsByNode[node.id].forEach(function(bp) {
+                        breakpointList.editableList('removeItem',bp);
+                    })
+                }
+                delete breakpointsByNode[node.id];
+                delete queueDepths[node.id];
+            }
+            function handleStateUpdate(state) {
+                debuggerState = state;
+                if (debuggerEnabled !== state.enabled ) {
+                    handlingCommsEvent = true;
+                    debuggerEnabledToggle.prop("checked", !!state.enabled).trigger("change");
+                    handlingCommsEvent = false;
+                }
+                // if (state.enabled) {
+                //     $(".red-ui-flow-debugger-btn-pauseresume i")
+                //         .removeClass("fa-play fa-pause")
+                //         .addClass(debuggerState.paused?"fa-play":"fa-pause");
+                // }
+                if (state.paused) {
+                    pauseDebugger();
+                } else {
+                    if (pausedNotification) {
+                        resumeDebugger();
+                    }
+                }
+                if (state.breakpoints) {
+                    var existing = Object.keys(breakpoints);
+                    var added = {};
+                    var unchanged = {};
+                    var changed = {};
+                    state.breakpoints.forEach(function(bp) {
+                        if (!breakpoints.hasOwnProperty(bp.id)) {
+                            breakpointList.editableList("addItem",bp);
+                            added[bp.id] = bp;
+                        } else {
+                            var existing = breakpoints[bp.id];
+                            if (existing.active !== bp.active) {
+                                changed[bp.id] = bp;
+                                existing.setActive(bp.active, true);
+                            } else {
+                                unchanged[bp.id] = bp;
+                            }
+                        }
+                    })
+                    var toRemove = existing.filter(function(id) {
+                        return !unchanged[id] && !changed[id];
+                    })
+                    toRemove.forEach(function(id) {
+                        breakpointList.editableList("removeItem",breakpoints[id]);
+                    })
+
+                }
+                if (state.queues) {
+                    for (var i in state.queues) {
+                        if (state.queues.hasOwnProperty(i)) {
+                            updateQueueDepth(i,state.queues[i].depth);
+                        }
+                    }
+                }
+            }
+            function postCommand(cmd,body) {
+                // $(".red-ui-flow-debugger-port-overlay.triggered").removeClass("triggered");
+                var opts = {
+                    url: "flow-debugger/"+cmd,
+                    type:"POST",
+                    error: function(jqXHR,textStatus,errorThrown) {
+                        console.log(jqXHR,textStatus,errorThrown);
+                    }
+                }
+                if (body) {
+                    opts.contentType = "application/json";
+                    opts.data = JSON.stringify(body);
+                }
+                $.ajax(opts);
+            }
+            var debuggerState;
+            var breakpoints = {};
+            var breakpointsByNode = {};
+            var messagesByNode = {};
+            var annotations = {};
+            var queueDepths = {};
+            var queuedMessages = {};
+            var pausedNotification;
+            var debuggerEnabled = false;
+            var handlingCommsEvent = false;
+
+            content = $("<div>").addClass("red-ui-flow-debugger disabled").css({"position":"relative","height":"100%"});
+            var footerToolbar = $('<div></div>');
+
+            RED.actions.add("core:show-flow-debugger-tab",show);
+
+            RED.sidebar.addTab({
+                id: "flow-debugger",
+                label: "flow-debugger",
+                name: "flow-debugger",
+                iconClass: "fa fa-flask",
+                content: content,
+                toolbar: footerToolbar,
+                enableOnEdit: true,
+                action: "core:show-flow-debugger-tab"
+            });
+
+            var header = $("<div>", {class:"red-ui-sidebar-header"}).appendTo(content);
+
+            var headerLeftSpan = $('<span>').css({"flex-grow":1,"text-align":"left"}).appendTo(header);
+            var headerRightSpan = $('<span>',{class:"red-ui-flow-debugger-toolbar button-group"}).appendTo(header);
+
+            var debuggerEnabledToggle = $('<input type="checkbox"/>').appendTo(headerLeftSpan).toggleButton({
+                enabledIcon: "fa-toggle-on",
+                disabledIcon: "fa-toggle-off",
+                enabledLabel: RED._("sidebar.info.enabled").toLowerCase(),
+                disabledLabel: RED._("sidebar.info.disabled").toLowerCase(),
+                class: "red-ui-button-small"
+            }).on("change", function() {
+                debuggerEnabled = this.checked;
+                if (!handlingCommsEvent) {
+                    $.ajax({
+                        url: "flow-debugger/state",
+                        contentType: "application/json",
+                        type:"PUT",
+                        data: JSON.stringify({enabled: debuggerEnabled}),
+                        success: function(resp) {
+                            content.toggleClass("disabled",!debuggerEnabled);
+                        },
+                        error: function(jqXHR,textStatus,errorThrown) {
+                            console.log(jqXHR,textStatus,errorThrown);
+                        }
+                    });
+                } else {
+                    content.toggleClass("disabled",!debuggerEnabled);
+                }
+                if (debuggerEnabled) {
+                    enableDebugger();
+                } else {
+                    disableDebugger()
+                }
+
+            });
+
+            $('<button type="button" class="red-ui-button red-ui-button-small red-ui-flow-debugger-btn-pauseresume"><i class="fa fa-pause"/></button>').appendTo(headerRightSpan).on("click", function(evt) {
+                if (debuggerState.paused) {
+                    postCommand("resume");
+                } else {
+                    postCommand("pause")
+                }
+            });
+            $('<button type="button" disabled class="red-ui-button red-ui-button-small red-ui-flow-debugger-btn-step"><i class="fa fa-step-forward"/></button>').appendTo(headerRightSpan).on("click", function(evt) {
+                postCommand("step")
+            });
+
+            var stackContainer = $('<div>',{class:"red-ui-flow-debugger-stack"}).css({height:"100%"}).appendTo(content);
+            var sections = RED.stack.create({
+                container: stackContainer
+            });
+            var breakpointSection = sections.add({
+                title: "Breakpoints",
+                collapsible: true
+            });
+            breakpointSection.expand();
+            breakpointSection.content.css({height:"100%"});
+
+            // var addingBreakpoints = false;
+            // var bg = $('<div style="float: right"></div>').appendTo(breakpointSection.header);
+            // var refreshButton = $('<button class="red-ui-button red-ui-button-small"><i class="fa fa-plus"></i></button>').appendTo(bg).on("click", function(evt) {
+            //     evt.preventDefault();
+            //     evt.stopPropagation();
+            //     if (addingBreakpoints) {
+            //         return;
+            //     }
+            //     addingBreakpoints = true;
+            //
+            // });
+
+            var breakpointList = $('<ol>',{class:"red-ui-flow-debugger-breakpoint-list"}).appendTo(breakpointSection.content).editableList({
+                addButton: false,
+                removable: true,
+                removeItem: function(item) {
+                    delete breakpoints[item.id];
+                    if (item.annotation) {
+                        item.annotation.el.classList.remove("active");
+                        item.annotation.el.classList.remove("inactive");
+                        delete item.annotation.breakpoint;
+                    }
+                    $.ajax({
+                        url: "flow-debugger/breakpoints/"+item.id,
+                        type:"DELETE",
+                        error: function(jqXHR,textStatus,errorThrown) {
+                            console.log(jqXHR,textStatus,errorThrown);
+                        }
+                    });
+
+                },
+                addItem: function(row, index, item) {
+                    breakpoints[item.id] = item;
+                    breakpointsByNode[item.location.id] = breakpointsByNode[item.location.id] || [];
+                    breakpointsByNode[item.location.id].push(item);
+                   /*
+                    *  {
+                    *     id: string
+                    *     location: { id portType portIndex }
+                    *     setActive: func(active){}
+                    *     active: true/false
+                    *     listLabel: DOM Element of Node Icon
+                    *     listItem: DOM Element of list item
+                    *     annotation { el: DOM Element, breakpoint: circular ref}
+                    *  }
+                    */
+                    item.listItem = row;
+
+                    row.addClass("red-ui-flow-debugger-breakpoint")
+                    var activeToggle = $('<input type="checkbox">')
+                                            .prop("checked",item.active).appendTo(row)
+                                            .on('change', function() {
+                                                item.setActive(this.checked);
+                                            });
+                    row.toggleClass("active",item.active)
+                    item.setActive = function(active, skipUpdate) {
+                        item.active = active;
+                        row.toggleClass("active",active)
+                        activeToggle.prop("checked",active);
+                        if (annotations[item.location.id]) {
+                            var annotation = annotations[item.location.id][item.location.portType==='i'?"input":"output"][item.location.portIndex];
+                            if (annotation) {
+                                annotation.el.classList.toggle("active", active);
+                                annotation.el.classList.toggle("inactive", !active);
+                            }
+                        }
+                        if (!skipUpdate) {
+                            $.ajax({
+                                url: "flow-debugger/breakpoints/"+item.id,
+                                contentType: "application/json",
+                                data: JSON.stringify({active: active}),
+                                type:"PUT",
+                                error: function(jqXHR,textStatus,errorThrown) {
+                                    console.log(jqXHR,textStatus,errorThrown);
+                                }
+                            });
+                        }
+                    }
+                    if (annotations[item.location.id]) {
+                        var annotation = annotations[item.location.id][item.location.portType==='i'?"input":"output"][item.location.portIndex];
+                        if (annotation) {
+                            annotation.breakpoint = item;
+                            item.annotation = annotation;
+                            annotation.el.classList.toggle("active", item.active);
+                            annotation.el.classList.toggle("inactive", !item.active);
+                        }
+                    }
+
+                    var node = RED.nodes.node(item.location.id);
+                    if (node) {
+                        item.listLabel = RED.utils.createNodeIcon(node,true).appendTo(row);
+                    } else {
+                        item.listLabel = $('<span>').text(item.location.id).appendTo(row);
+                    }
+                    var bpLabel = item.location.portType === 'i'?"input":("output "+(item.location.portIndex+1))
+                    $('<span class="red-ui-flow-debugger-breakpoint-port">').text(bpLabel).appendTo(row)
+                    row.on("mouseenter", function() {
+                        if (annotations[item.location.id]) {
+                            var annotation = annotations[item.location.id][item.location.portType==='i'?"input":"output"][item.location.portIndex];
+                            if (annotation) {
+                                annotation.highlight(true);
+                            }
+                        }
+                    }).on("mouseleave", function() {
+                        if (annotations[item.location.id]) {
+                            var annotation = annotations[item.location.id][item.location.portType==='i'?"input":"output"][item.location.portIndex];
+                            if (annotation) {
+                                annotation.highlight(false);
+                            }
+                        }
+                    })
+                }
+            })
+
+            var messageSection = sections.add({
+                title: "Messages",
+                collapsible: true
+            });
+            messageSection.expand();
+            messageSection.content.css({height:"100%"});
+
+            var messageList = $('<ol>',{class:"red-ui-flow-debugger-message-list"}).appendTo(messageSection.content).editableList({
+                addButton: false,
+                removeItem: function(item) {
+                    var location = parseLocation(item.location);
+                    if (annotations[location.id]) {
+                        var ann = annotations[location.id][location.portType][location.portIndex];
+                        if (ann) {
+                            ann.highlight(false);
+                        }
+                    }
+                    delete queuedMessages[item.id];
+                    delete messagesByNode[location.id][item.id];
+                },
+                addItem: function(row, index, item) {
+                    queuedMessages[item.id] = item;
+                    var location = parseLocation(item.location);
+                    messagesByNode[location.id] = messagesByNode[location.id] || {};
+                    messagesByNode[location.id][item.id] = item;
+
+                    var destinationLocation = item.destination?parseLocation(item.destination):null;
+                    row.addClass("red-ui-flow-debugger-message");
+                    row.on("mouseenter", function(evt) {
+                        if (annotations[location.id]) {
+                            var ann = annotations[location.id][location.portType][location.portIndex];
+                            if (ann) {
+                                ann.highlight(true);
+                            }
+                        }
+                    }).on("mouseleave", function(evt) {
+                        if (annotations[location.id]) {
+                            var ann = annotations[location.id][location.portType][location.portIndex];
+                            if (ann) {
+                                ann.highlight(false);
+                            }
+                        }
+                    });
+
+                    var topRow = $('<div class="red-ui-debug-msg-meta"></div>').appendTo(row);
+                    var bottomRow = $('<span class="red-ui-debug-msg-payload"></span>').appendTo(row);
+
+                    // if (!destinationLocation) {
+                    //     // msg arriving at location
+                    //     $('<svg width="20" height="20" viewbox="0 0 20 20"><path d="M 5 10 v 10 m 0 -5 h 20" stroke="#666" fill="none"></svg>').appendTo(topRow);
+                    // }
+                    var pathParts = location.path.split("/");
+                    // Take off the top most flow id
+                    pathParts.shift();
+                    // Add on the node id if it isn't already there
+                    if (pathParts[pathParts.length-1] !== location.id) {
+                        pathParts.push(location.id);
+                    }
+                    pathParts.forEach(function(nodeId,i) {
+                        var srcLink = $('<a href="#"></a>').css({
+                            "display":"flex",
+                            "align-items":"center",
+                            "margin-top":Math.max(-10,(pathParts.length-1-i)*-2)+"px",
+                            "margin-left":(i*-8)+"px"
+                        }).appendTo(topRow).on("click", function(evt) {
+                            evt.preventDefault();
+                            RED.view.reveal(nodeId);
+                        });
+
+
+                        var srcNode = RED.nodes.node(nodeId);
+                        if (srcNode) {
+                             item.listLabel = RED.utils.createNodeIcon(srcNode, i === pathParts.length-1).appendTo(srcLink).addClass("red-ui-node-icon-small");
+                        } else {
+                            item.listLabel = $('<span>').addClass('red-ui-node-label').text(nodeId).appendTo(srcLink);
+                        }
+                        if (i === pathParts.length-1) {
+                            $('<span>').addClass('red-ui-node-label').text("["+location.portType+(location.portType === "output"?(" "+(parseInt(location.portIndex)+1)):"")+"]").css("margin-left","5px").appendTo(srcLink);
+                        }
+                        srcLink.on("mouseenter", function(evt) {
+                            var n = RED.nodes.node(nodeId);
+                            if (n) {
+                                n.highlighted = true;
+                                n.dirty = true;
+                            }
+                            RED.view.redraw();
+                        }).on("mouseleave", function(evt) {
+                            var n = RED.nodes.node(nodeId);
+                            if (n) {
+                                n.highlighted = false;
+                                n.dirty = true;
+                            }
+                            RED.view.redraw();
+                        })
+                    });
+
+                    if (destinationLocation) {
+                        // $('<svg width="20" height="17" viewbox="0 0 20 17"><path d="M 0 6 q 3 0 3 3 q 0 3 -3 3 M 3 9 h 14 M 20 6 q -3 0 -3 3 q 0 3 3 3" stroke="#666" stroke-width="1.5" fill="none"></svg>').appendTo(topRow);
+                        var dstLink = $('<a href="#"><span class="red-ui-node-label">[ <i class="fa fa-angle-right"></i></span> </a>').addClass('red-ui-node-label').css("margin-left","20px").appendTo(topRow).on("click", function(evt) {
+                            evt.preventDefault();
+                            RED.view.reveal(destinationLocation.id);
+                        });
+                        $('<span>').addClass('red-ui-node-label').text(destinationLocation.id.substring(0,6)+"... ]").appendTo(dstLink);
+                        dstLink.on("mouseenter", function(evt) {
+                            var n = RED.nodes.node(destinationLocation.id);
+                            if (n) {
+                                n.highlighted = true;
+                                n.dirty = true;
+                            }
+                            RED.view.redraw();
+                        }).on("mouseleave", function(evt) {
+                            var n = RED.nodes.node(destinationLocation.id);
+                            if (n) {
+                                n.highlighted = false;
+                                n.dirty = true;
+                            }
+                            RED.view.redraw();
+                        })
+                    }
+
+                    var tools = $('<span class="red-ui-flow-debugger-msg-tools button-group"></span>').appendTo(topRow);
+                    var stepItem = $('<button class="red-ui-button red-ui-button-small"><i class="fa fa-step-forward"></i></button>').appendTo(tools).on("click", function(evt) {
+                        evt.preventDefault();
+                        evt.stopPropagation();
+                        postCommand("step",{message: item.id})
+                        messageList.editableList("removeItem",item);
+                    });
+                    var editItem = $('<button class="red-ui-button red-ui-button-small"><i class="fa fa-trash"></i></button>').appendTo(tools).on("click", function(evt) {
+                        evt.preventDefault();
+                        evt.stopPropagation();
+                        $.ajax({
+                            url: "flow-debugger/messages/"+item.id,
+                            type:"DELETE",
+                            error: function(jqXHR,textStatus,errorThrown) {
+                                console.log(jqXHR,textStatus,errorThrown);
+                            }
+                        });
+                    });
+
+                    if (item.msg) {
+                        var msg = RED.utils.decodeObject(item.msg.msg,item.msg.format);
+                        var el = $('<span class="red-ui-debug-msg-payload"></span>').appendTo(bottomRow);
+                        var debugMessage = RED.utils.createObjectElement(msg, {
+                            sourceId: true, // <- needed to get controls to appear
+                            path: '',
+                            // tools: function(key,value) {
+                            //     if (value && value.hasOwnProperty('__enc__')) {
+                            //         if (value.type === 'function' || value.type === 'internal') {
+                            //             return null;
+                            //         }
+                            //     }
+                            //     var tools = $('<span class="button-group"></span>');
+                            //     var editItem = $('<button class="red-ui-button red-ui-button-small"><i class="fa fa-pencil"></i></button>').appendTo(tools).on("click", function(evt) {
+                            //         evt.preventDefault();
+                            //         evt.stopPropagation();
+                            //         console.log(key,value);
+                            //
+                            //         RED.editor.editJavaScript({
+                            //             value: JSON.stringify(value,' ',4),
+                            //             complete: function(v) {
+                            //                 console.log("NEW VALUE",v)
+                            //             }
+                            //         })
+                            //
+                            //
+                            //     });
+                            //     return tools;
+                            // },
+                            key: /*true*/null });
+                        debugMessage.appendTo(el);
+                    }
+
+
+                }
+            })
+
+            function pauseDebugger() {
+                $("#red-ui-workspace").addClass("red-ui-flow-debugger-paused");
+                $(".red-ui-flow-debugger-btn-pauseresume i").removeClass("fa-pause").addClass("fa-play");
+                $(".red-ui-flow-debugger-btn-step").prop("disabled",null);
+
+                if (!pausedNotification) {
+                    var notificationContent = $('<p class="red-ui-flow-debugger-notification">');
+                    $('<span>').text("Flows paused").appendTo(notificationContent);
+                    var notificationButtons = $('<span>',{class:"red-ui-flow-debugger-toolbar button-group"}).appendTo(notificationContent);
+
+                    $('<button type="button" class="red-ui-button red-ui-button-small red-ui-flow-debugger-btn-pauseresume"><i class="fa fa-play"/></button>').appendTo(notificationButtons).on("click", function(evt) {
+                        postCommand("resume");
+                    });
+                    $('<button type="button" class="red-ui-button red-ui-button-small"><i class="fa fa-step-forward"/></button>').appendTo(notificationButtons).on("click", function(evt) {
+                        postCommand("step")
+                    });
+
+                    pausedNotification = RED.notify(notificationContent,{fixed: true});
+                }
+                debuggerState.paused = true;
+            }
+            function resumeDebugger() {
+                if (pausedNotification) {
+                    pausedNotification.close();
+                    pausedNotification = null;
+                }
+                $(".red-ui-flow-debugger-btn-pauseresume i").removeClass("fa-play").addClass("fa-pause");
+                $(".red-ui-flow-debugger-btn-step").prop("disabled",true);
+                debuggerState.paused = false;
+            }
+            RED.events.on("nodes:add",onNodeChange);
+            RED.events.on("nodes:remove",onNodeRemove);
+            RED.events.on("nodes:change",onNodeChange);
+
+
+            RED.comms.subscribe("flow-debugger/#", function(topic, msg) {
+                console.log(">",topic,msg)
+            })
+            RED.comms.subscribe("flow-debugger/state", function(topic, msg) {
+                handleStateUpdate(msg);
+            });
+            RED.comms.subscribe("flow-debugger/paused", function(topic, msg) {
+                pauseDebugger();
+                // $(".red-ui-flow-debugger-port-overlay.triggered").removeClass("triggered");
+                // var triggeringBreakpoint = breakpoints[msg.breakpoint];
+                // if (triggeringBreakpoint) {
+                //     triggeringBreakpoint.annotation.el.classList.add("triggered");
+                // }
+
+            })
+            RED.comms.subscribe("flow-debugger/resumed", resumeDebugger);
+            RED.comms.subscribe("flow-debugger/messageQueued", function(topic, msg) {
+                updateQueueDepth(msg.location,msg.depth);
+                messageList.editableList('addItem', {
+                    id: msg.id,
+                    location: msg.location,
+                    msg: msg.msg,
+                    destination: msg.destination
+                })
+            })
+            RED.comms.subscribe("flow-debugger/messageDispatched", function(topic, msg) {
+                updateQueueDepth(msg.location,msg.depth);
+                var message = queuedMessages[msg.id];
+                if (message) {
+                    messageList.editableList('removeItem',message);
+                }
+            })
+
+            $.ajax({
+                url: "flow-debugger/state",
+                type:"GET",
+                success: function(state) {
+                    handleStateUpdate(state);
+                },
+                error: function(jqXHR,textStatus,errorThrown) {
+                    console.log(jqXHR,textStatus,errorThrown);
+                }
+            });
+
+            function disableDebugger() {
+                breakpointList.editableList('empty');
+                messageList.editableList('empty');
+                RED.hooks.remove("*.flow-debugger");
+                $(".red-ui-flow-debugger-port-overlay").remove();
+                breakpoints = {};
+                breakpointsByNode = {};
+                annotations = {};
+                queueDepths = {};
+                queuedMessages = {};
+            }
+            function enableDebugger() {
+                RED.hooks.add("viewAddPort.flow-debugger", function(evt) {
+                    createPortAnnotation(evt.node, evt.portType, evt.portIndex, evt.port)
+                })
+                RED.hooks.add("viewRemovePort.flow-debugger", function(evt) {
+                    delete annotations[evt.node.id][evt.portType][evt.portIndex];
+                })
+                RED.hooks.add("viewRemoveNode.flow-debugger", function(evt) {
+                    delete annotations[evt.node.id];
+                })
+                annotateFlow();
+
+                $.ajax({
+                    url: "flow-debugger/messages",
+                    type:"GET",
+                    success: function(messages) {
+                        messages.forEach(function(msg) {
+                            messageList.editableList('addItem', {
+                                id: msg.id,
+                                location: msg.location,
+                                msg: msg.msg
+                            })
+                        })
+                    },
+                    error: function(jqXHR,textStatus,errorThrown) {
+                        console.log(jqXHR,textStatus,errorThrown);
+                    }
+                });
+            }
+            function clearAnnotations() {
+
+            }
+            function annotatePorts(ports) {
+                $(ports).each(function() {
+                    createPortAnnotation(this.__port__.__data__, this.__port__.__portType__ === 0 ? "output": "input",this.__port__.__portIndex__, this)
+                })
+            }
+            function annotateFlow() {
+                annotatePorts(".red-ui-flow-port-output");
+                annotatePorts(".red-ui-flow-port-input");
+            }
+            function createPortAnnotation(node, portType, portIndex, portGroup) {
+                if ((node.type === "link in" && portType === "input") || (node.type === "link out" && portType === "output")) {
+                    return;
+                }
+
+                var overlay = document.createElementNS("http://www.w3.org/2000/svg","g");
+                overlay.setAttribute("class","red-ui-flow-debugger-port-overlay");
+
+                var portRing = document.createElementNS("http://www.w3.org/2000/svg","path");
+                portRing.setAttribute("d","M -12 -6.5 h 24 q 4 0 4 4 v 5 q 0 4 -4 4 h -24 q -4 0 -4 -4 v -5 q 0 -4 4 -4 z");
+                portRing.setAttribute("class","red-ui-flow-debugger-port-overlay-background");
+
+                var portPulse;
+                var portHighlight;
+
+                var pulseGroup = document.createElementNS("http://www.w3.org/2000/svg","g");
+                if (portType === "input") {
+                    // portRing.setAttribute("d","M -1 10 h -14 q -3 0 -3 -3 v -4 q 0 -3 3 -3 h 14 q 1 -1.5 2.5 -1.5 h 6 q 4 0 4 4 v 5 q 0 4 -4 4 h -6 q -1.5 0 -2.5 -1.5 z");
+                    pulseGroup.setAttribute("transform","translate(-4.5,5)");
+                } else {
+                    // portRing.setAttribute("d","M -1 10 h -14 q -3 0 -3 -3 v -4 q 0 -3 3 -3 h 14 q 1 -1.5 2.5 -1.5 h 6 q 4 0 4 4 v 5 q 0 4 -4 4 h -6 q -1.5 0 -2.5 -1.5 z");
+                    pulseGroup.setAttribute("transform","translate(14.5,5)");
+                }
+                pulseGroup.appendChild(portRing);
+                overlay.appendChild(pulseGroup);
+
+                var statusLabel = document.createElementNS("http://www.w3.org/2000/svg","text");
+                statusLabel.setAttribute("class","red-ui-flow-debugger-port-overlay-label");
+                statusLabel.setAttribute("x",portType === "input" ? -1 : 26);
+                statusLabel.setAttribute("y",9.5);
+
+                overlay.appendChild(statusLabel);
+
+                annotations[node.id] = annotations[node.id] || {
+                    input:{},
+                    output: {}
+                }
+                annotations[node.id][portType][portIndex] = {
+                    el:overlay,
+                    label: statusLabel,
+                    pulse: function() {
+                        if (!portPulse) {
+                           portPulse = portRing.cloneNode(true);
+                           portPulse.classList.add("red-ui-flow-debugger-port-overlay-pulse");
+                           pulseGroup.appendChild(portPulse);
+                       } else {
+                            var newPulse = portPulse.cloneNode(true);
+                            portPulse.remove();
+                            pulseGroup.appendChild(newPulse);
+                            portPulse = newPulse;
+                        }
+                    },
+                    highlight: function(state) {
+                        if (!!portHighlight === state) {
+                            return;
+                        }
+                        if (portHighlight) {
+                            portHighlight.remove();
+                            portHighlight = null;
+                        } else {
+                            portHighlight = portRing.cloneNode(true);
+                            portHighlight.setAttribute("class","red-ui-flow-debugger-port-overlay-highlight");
+                            pulseGroup.appendChild(portHighlight);
+                        }
+                    }
+                }
+                var self = annotations[node.id][portType][portIndex];
+                if (breakpointsByNode[node.id]) {
+                    for (var i=0,l=breakpointsByNode[node.id].length;i<l;i++) {
+                        var bp = breakpointsByNode[node.id][i];
+                        // TODO: standardize portType representation.
+                        // breakpoint uses i/o - this function receives input/output
+                        if (bp.location.portType === portType[0] && bp.location.portIndex === portIndex) {
+                            overlay.classList.toggle("active", bp.active);
+                            overlay.classList.toggle("inactive", !bp.active);
+                            self.breakpoint = bp;
+                            bp.annotation = self;
+                            break;
+                        }
+                    }
+                }
+                portGroup.insertBefore(overlay, portGroup.children[0]);
+                portGroup.addEventListener("mouseenter", function() {
+                    if (RED.view.state() === RED.state.DEFAULT) {
+                        if (!self.breakpoint) {
+                            overlay.classList.add("pending");
+                        }
+                    }
+                    if (self.breakpoint) {
+                        self.breakpoint.listItem.parent().addClass("highlight")
+                    }
+                })
+                portGroup.addEventListener("mouseleave", function() {
+                    overlay.classList.remove("pending");
+                    if (self.breakpoint) {
+                        self.breakpoint.listItem.parent().removeClass("highlight")
+                        if (self.pendingRemoval) {
+                            delete self.pendingRemoval;
+                            breakpointList.editableList("removeItem", self.breakpoint);
+                        }
+                    }
+
+                })
+                overlay.addEventListener("click", function() {
+                    if (self.breakpoint) {
+                        if (self.breakpoint.active) {
+                            self.breakpoint.setActive(!self.breakpoint.active);
+                        } else if (self.pendingRemoval) {
+                            overlay.classList.remove("pending");
+                            self.breakpoint.listItem.parent().removeClass("pending");
+                            delete self.pendingRemoval;
+                            self.breakpoint.setActive(true);
+                        } else {
+                            overlay.classList.add("pending");
+                            self.breakpoint.listItem.parent().addClass("pending");
+                            self.pendingRemoval = true;
+                        }
+                    } else {
+                        overlay.classList.remove("pending");
+                        var isSubflow = !!RED.nodes.subflow(node.z);
+                        $.ajax({
+                            url: "flow-debugger/breakpoints",
+                            contentType: "application/json",
+                            data: JSON.stringify({id: node.id, path: isSubflow?"*":node.z, portType: portType[0], portIndex: portIndex}),
+                            type:"POST",
+                            success: function(resp) {
+                                breakpointList.editableList("addItem", resp);
+                            },
+                            error: function(jqXHR,textStatus,errorThrown) {
+                                console.log(jqXHR,textStatus,errorThrown);
+                            }
+                        });
+                    }
+                })
+                if (queueDepths[node.id]) {
+                    var depth = queueDepths[node.id][portType][portIndex];
+                    if (depth > 0) {
+                        overlay.classList.add("hasMessages");
+                        statusLabel.textContent = depth;
+                    } else {
+                        overlay.classList.remove("hasMessages");
+                        statusLabel.textContent = "";
+                    }
+                }
+            }
+        }
+    })
+})();
+</script>
