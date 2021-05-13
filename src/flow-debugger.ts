@@ -18,10 +18,6 @@ module.exports = (RED:any) => {
                 RED.comms.publish("flow-debugger/state",flowDebugger.getState())
             }
 
-            flowDebugger.setBreakpoint(new Location("bfc71766.923608","3422d1.25b52d3","i",0))
-            flowDebugger.setBreakpoint(new Location("27ea1409.45cb6c","3422d1.25b52d3","o",0))
-            flowDebugger.setBreakpoint(new Location("dba78653.d53ac8","3422d1.25b52d3","i",0))
-
             flowDebugger.on("paused", (event:PausedEvent) => {
                 RED.comms.publish("flow-debugger/paused",event)
             })
