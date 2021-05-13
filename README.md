@@ -12,10 +12,12 @@ features:
 
 ## Installation
 
-Install this module in your Node-RED user directory or via the Palette Manager
-then restart Node-RED
+**This module has not yet been published to npm. To install you will to following the steps in the [development section](#development).**
 
-    npm install node-red-debugger
+~Install this module in your Node-RED user directory or via the Palette Manager
+then restart Node-RED~
+
+~npm install node-red-debugger~
 
 
 ## Usage
@@ -73,9 +75,17 @@ You can click the play button to resume the flows.
 ## Development
 
 This plugin has been developed using TypeScript. This means that when running
-from the source code rather than npm, it must first be built:
+from the source code rather than npm, it must first be built.
 
-   npm run build
+    git clone https://github.com/node-red/node-red-debugger.git
+    cd node-red-debugger
+    npm install
+    npm run build
 
 This will generate all of the plugin files in the `dist` folder - which is where
 Node-RED will expect to load the files from.
+
+
+Then, in your Node-RED user directory (`~/.node-red`) run:
+
+    npm install `<path to node-red-debugger directory>`
