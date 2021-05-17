@@ -117,7 +117,7 @@ module.exports = (RED:any) => {
             });
             RED.httpAdmin.delete(`${apiRoot}/messages/:id`, routeAuthHandler, (req:any, res:any) => {
                 flowDebugger.deleteMessage(parseInt(req.params.id,10));
-                res.sendState(200);
+                res.sendStatus(200);
             });
             RED.httpAdmin.post(`${apiRoot}/pause`, routeAuthHandler, (_:any, res:any) => {
                 flowDebugger.pause();
