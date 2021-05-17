@@ -1,0 +1,9 @@
+{
+    "label": {
+        "breakpoints": "Breakpoints",
+        "messages":"Messages",
+        "output": "output",
+        "input": "input",
+        "paused": "Flows paused"
+    }
+}

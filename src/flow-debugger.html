@@ -33,6 +33,9 @@
     .red-ui-flow-debugger .red-ui-editableList-container li .red-ui-editableList-item-remove {
         right: 3px;
     }
+    .red-ui-flow-debugger-breakpoint-list, .red-ui-flow-debugger-message-list {
+        min-height: 30px;
+    }
     .red-ui-flow-debugger-breakpoint-list .red-ui-editableList-item-content {
         padding: 6px 8px;
     }
@@ -327,8 +330,6 @@
             content = $("<div>").addClass("red-ui-flow-debugger disabled").css({"position":"relative","height":"100%"});
             var footerToolbar = $('<div></div>');
 
-            RED.actions.add("core:show-flow-debugger-tab",show);
-
             RED.sidebar.addTab({
                 id: "flow-debugger",
                 label: "flow-debugger",
@@ -393,7 +394,7 @@
                 container: stackContainer
             });
             var breakpointSection = sections.add({
-                title: "Breakpoints",
+                title: RED._("node-red-debugger/flow-debugger:label.breakpoints"),
                 collapsible: true
             });
             breakpointSection.expand();
@@ -493,7 +494,7 @@
                     } else {
                         item.listLabel = $('<span>').text(item.location.id).appendTo(row);
                     }
-                    var bpLabel = item.location.portType === 'i'?"input":("output "+(item.location.portIndex+1))
+                    var bpLabel = item.location.portType === 'i'?RED._("node-red-debugger/flow-debugger:label.input"):(RED._("node-red-debugger/flow-debugger:label.output")+" "+(item.location.portIndex+1))
                     $('<span class="red-ui-flow-debugger-breakpoint-port">').text(bpLabel).appendTo(row)
                     row.on("mouseenter", function() {
                         if (annotations[item.location.id]) {
@@ -514,7 +515,7 @@
             })
 
             var messageSection = sections.add({
-                title: "Messages",
+                title: RED._("node-red-debugger/flow-debugger:label.messages"),
                 collapsible: true
             });
             messageSection.expand();
@@ -696,7 +697,7 @@
 
                 if (!pausedNotification) {
                     var notificationContent = $('<p class="red-ui-flow-debugger-notification">');
-                    $('<span>').text("Flows paused").appendTo(notificationContent);
+                    $('<span>').text(RED._("node-red-debugger/flow-debugger:label.paused")).appendTo(notificationContent);
                     var notificationButtons = $('<span>',{class:"red-ui-flow-debugger-toolbar button-group"}).appendTo(notificationContent);
 
                     $('<button type="button" class="red-ui-button red-ui-button-small red-ui-flow-debugger-btn-pauseresume"><i class="fa fa-play"/></button>').appendTo(notificationButtons).on("click", function(evt) {
