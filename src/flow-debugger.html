@@ -758,6 +758,18 @@
                 }
             })
 
+
+            RED.actions.add("flow-debugger:show-debugger-tab",show);
+            RED.actions.add("flow-debugger:pause-flows", function() { postCommand('pause') });
+            RED.actions.add("flow-debugger:resume-flows",function() { postCommand('resume') });
+            RED.actions.add("flow-debugger:step-flows", function() { postCommand('step') });
+            RED.actions.add("flow-debugger:enable-debugger", function() {
+                debuggerEnabledToggle.prop("checked", true).trigger("change");
+            });
+            RED.actions.add("flow-debugger:disable-debugger", function() {
+                debuggerEnabledToggle.prop("checked", false).trigger("change");
+            });
+
             $.ajax({
                 url: "flow-debugger/state",
                 type:"GET",
