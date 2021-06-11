@@ -7,7 +7,7 @@
         "tslint": "tslint -c tslint.json -p tsconfig.json",
         "copyAssets": "node scripts/copy-static-assets.js",
         "dev": "nodemon --exec 'npm run build'  -i dist -e 'ts html'",
-        "test": "echo \"Error: no test specified\" && exit 1"
+        "test": "npm run build"
     },
     "keywords": [],
     "author": "Nick O'Leary <nick.oleary@gmail.com>",
