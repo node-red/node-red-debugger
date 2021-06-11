@@ -12,12 +12,10 @@ features:
 
 ## Installation
 
-**This module has not yet been published to npm. To install you will to following the steps in the [development section](#development).**
+Install this module in your Node-RED user directory or via the Palette Manager
+then restart Node-RED
 
-~Install this module in your Node-RED user directory or via the Palette Manager
-then restart Node-RED~
-
-~npm install node-red-debugger~
+    npm install node-red-debugger
 
 
 ## Usage
@@ -70,6 +68,7 @@ You can click the play button to resume the flows.
 
  - Set conditions on individual breakpoints
  - Allow queued messages to be edited
+ - Pause only selected nodes/flows/groups
 
 
 ## Development
@@ -89,3 +88,18 @@ Node-RED will expect to load the files from.
 Then, in your Node-RED user directory (`~/.node-red`) run:
 
     npm install `<path to node-red-debugger directory>`
+
+### Themeing
+
+The Debugger sidebar will use the active Node-RED theme. For the breakpoints
+drawn within the flow workspace, the following CSS variables will be used if they
+are set by the active theme.
+
+ - `--red-ui-flow-debugger-breakpoint-fill`
+ - `--red-ui-flow-debugger-breakpoint-stroke`
+ - `--red-ui-flow-debugger-breakpoint-active-fill`
+ - `--red-ui-flow-debugger-breakpoint-active-stroke`
+ - `--red-ui-flow-debugger-breakpoint-inactive-fill`
+ - `--red-ui-flow-debugger-breakpoint-inactive-stroke`
+ - `--red-ui-flow-debugger-breakpoint-label`
+ - `--red-ui-flow-debugger-breakpoint-label-active`

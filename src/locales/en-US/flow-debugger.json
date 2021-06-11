@@ -1,9 +1,16 @@
 {
     "label": {
+        "debugger": "Flow Debugger",
+        "debuggerShort": "debugger",
         "breakpoints": "Breakpoints",
         "messages":"Messages",
         "output": "output",
         "input": "input",
-        "paused": "Flows paused"
+        "paused": "Flows paused",
+        "resume": "Resume flows",
+        "step": "Step flows",
+        "pause": "Pause flows",
+        "deleteMessage": "Delete message",
+        "stepMessage": "Step message"
     }
 }

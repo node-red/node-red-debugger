@@ -74,6 +74,7 @@
         font-size: 0.9em;
         width: 55px;
         flex-shrink: 0;
+
     }
 
     /* Flow Annotations */
@@ -83,15 +84,15 @@
     }
 
     .red-ui-flow-debugger-port-overlay-background {
-        fill: #fff;
+        fill: var(--red-ui-flow-debugger-breakpoint-fill, #fff);
         stroke-width: 1;
-        stroke: #58d;
+        stroke: var(--red-ui-flow-debugger-breakpoint-stroke, #58d);
     }
 
     .red-ui-flow-debugger-port-overlay-background.red-ui-flow-debugger-port-overlay-pulse {
         fill: none !important;
         stroke-width: 1;
-        stroke: #58d;
+        stroke: var(--red-ui-flow-debugger-breakpoint-stroke, #58d);
         animation: red-ui-flow-debugger-port-overlay-pulse-kf 0.6s linear;
     }
 
@@ -113,33 +114,24 @@
     }
 
     .red-ui-flow-debugger-port-overlay.active .red-ui-flow-debugger-port-overlay-background {
-        fill: #59e;
-        stroke: #36b;
+        fill: var(--red-ui-flow-debugger-breakpoint-active-fill, #59e);
+        stroke: var(--red-ui-flow-debugger-breakpoint-active-stroke, #36b);
     }
     .red-ui-flow-debugger-port-overlay.inactive .red-ui-flow-debugger-port-overlay-background {
-        fill: #def;
-        stroke: #59e;
+        fill: var(--red-ui-flow-debugger-breakpoint-inactive-fill, #def);
+        stroke: var(--red-ui-flow-debugger-breakpoint-inactive-stroke, #59e);
     }
     .red-ui-flow-debugger-port-overlay.pending .red-ui-flow-debugger-port-overlay-background {
-        fill: #def;
-        stroke: #59e;
+        fill: var(--red-ui-flow-debugger-breakpoint-inactive-fill, #def);
+        stroke: var(--red-ui-flow-debugger-breakpoint-inactive-stroke, #59e);
         stroke-dasharray: 4 2;
         opacity: 0.8;
     }
-    .red-ui-flow-debugger-port-overlay.triggered .red-ui-flow-debugger-port-overlay-background {
-        stroke-width: 2;
-        stroke: #36ab3f;
-    }
-    /* .red-ui-flow-debugger-port-overlay.highlight .red-ui-flow-debugger-port-overlay-background {
-        stroke-width: 2;
-        stroke-dasharray: 4 2;
-        stroke: #ff7f0e;
-    } */
     .red-ui-flow-debugger-port-overlay-highlight {
         stroke-width: 1.5;
         fill: none;
         stroke-dasharray: 4 2;
-        stroke: #ff7f0e;
+        stroke: var(--red-ui-node-selected-color, #ff7f0e);
         transform: scale(1.2, 1.5);
 
     }
@@ -147,18 +139,18 @@
     .red-ui-flow-debugger-port-overlay.pending,
     .red-ui-flow-debugger-port-overlay.active,
     .red-ui-flow-debugger-port-overlay.inactive,
-    .red-ui-flow-debugger-port-overlay.triggered,
     .red-ui-flow-debugger-port-overlay.hasMessages {
         display: inherit;
     }
     .red-ui-flow-debugger-port-overlay-label {
         stroke-width: 0;
-        fill: #000;
+        fill: var(--red-ui-flow-debugger-breakpoint-label, var(--red-ui-node-label-color, #000));
         font-size: 9pt;
         text-anchor:end;
     }
     .red-ui-flow-debugger-port-overlay.active .red-ui-flow-debugger-port-overlay-label {
-        fill: #fff;
+
+        fill: var(--red-ui-flow-debugger-breakpoint-label-active, #fff);
     }
 
     .red-ui-flow-debugger-notification {
@@ -168,10 +160,6 @@
         flex-grow: 1;
         text-align: right;
     }
-    .red-ui-flow-debugger-toolbar button {
-        width: 14px;
-    }
-
     .red-ui-flow-debugger-message:hover .red-ui-flow-debugger-msg-tools {
         display: inline;
     }
@@ -302,7 +290,6 @@
                 }
             }
             function postCommand(cmd,body) {
-                // $(".red-ui-flow-debugger-port-overlay.triggered").removeClass("triggered");
                 var opts = {
                     url: "flow-debugger/"+cmd,
                     type:"POST",
@@ -332,8 +319,8 @@
 
             RED.sidebar.addTab({
                 id: "flow-debugger",
-                label: "flow-debugger",
-                name: "flow-debugger",
+                label: RED._("node-red-debugger/flow-debugger:label.debuggerShort"),
+                name: RED._("node-red-debugger/flow-debugger:label.debugger"),
                 iconClass: "fa fa-flask",
                 content: content,
                 toolbar: footerToolbar,
@@ -349,9 +336,7 @@
             var debuggerEnabledToggle = $('<input type="checkbox"/>').appendTo(headerLeftSpan).toggleButton({
                 enabledIcon: "fa-toggle-on",
                 disabledIcon: "fa-toggle-off",
-                enabledLabel: RED._("sidebar.info.enabled").toLowerCase(),
-                disabledLabel: RED._("sidebar.info.disabled").toLowerCase(),
-                class: "red-ui-button-small"
+                baseClass: "red-ui-sidebar-header-button"
             }).on("change", function() {
                 debuggerEnabled = this.checked;
                 if (!handlingCommsEvent) {
@@ -378,16 +363,22 @@
 
             });
 
-            $('<button type="button" class="red-ui-button red-ui-button-small red-ui-flow-debugger-btn-pauseresume"><i class="fa fa-pause"/></button>').appendTo(headerRightSpan).on("click", function(evt) {
+            var playPauseButton = $('<button type="button" class="red-ui-sidebar-header-button red-ui-flow-debugger-btn-pauseresume"><i class="fa fa-pause"/></button>').appendTo(headerRightSpan).on("click", function(evt) {
                 if (debuggerState.paused) {
                     postCommand("resume");
                 } else {
                     postCommand("pause")
                 }
             });
-            $('<button type="button" disabled class="red-ui-button red-ui-button-small red-ui-flow-debugger-btn-step"><i class="fa fa-step-forward"/></button>').appendTo(headerRightSpan).on("click", function(evt) {
+            RED.popover.tooltip(playPauseButton,function() {
+                return RED._("node-red-debugger/flow-debugger:label."+(debuggerState.paused?"resume":"pause"))
+            });
+
+            var stepButton = $('<button type="button" disabled class="red-ui-sidebar-header-button red-ui-flow-debugger-btn-step"><i class="fa fa-step-forward"/></button>').appendTo(headerRightSpan).on("click", function(evt) {
                 postCommand("step")
             });
+            RED.popover.tooltip(stepButton,RED._("node-red-debugger/flow-debugger:label.step"));
+
 
             var stackContainer = $('<div>',{class:"red-ui-flow-debugger-stack"}).css({height:"100%"}).appendTo(content);
             var sections = RED.stack.create({
@@ -611,7 +602,6 @@
                     });
 
                     if (destinationLocation) {
-                        // $('<svg width="20" height="17" viewbox="0 0 20 17"><path d="M 0 6 q 3 0 3 3 q 0 3 -3 3 M 3 9 h 14 M 20 6 q -3 0 -3 3 q 0 3 3 3" stroke="#666" stroke-width="1.5" fill="none"></svg>').appendTo(topRow);
                         var dstLink = $('<a href="#"><span class="red-ui-node-label">[ <i class="fa fa-angle-right"></i></span> </a>').addClass('red-ui-node-label').css("margin-left","20px").appendTo(topRow).on("click", function(evt) {
                             evt.preventDefault();
                             RED.view.reveal(destinationLocation.id);
@@ -641,7 +631,8 @@
                         postCommand("step",{message: item.id})
                         messageList.editableList("removeItem",item);
                     });
-                    var editItem = $('<button class="red-ui-button red-ui-button-small"><i class="fa fa-trash"></i></button>').appendTo(tools).on("click", function(evt) {
+
+                    var deleteItem = $('<button class="red-ui-button red-ui-button-small"><i class="fa fa-trash"></i></button>').appendTo(tools).on("click", function(evt) {
                         evt.preventDefault();
                         evt.stopPropagation();
                         $.ajax({
@@ -700,12 +691,15 @@
                     $('<span>').text(RED._("node-red-debugger/flow-debugger:label.paused")).appendTo(notificationContent);
                     var notificationButtons = $('<span>',{class:"red-ui-flow-debugger-toolbar button-group"}).appendTo(notificationContent);
 
-                    $('<button type="button" class="red-ui-button red-ui-button-small red-ui-flow-debugger-btn-pauseresume"><i class="fa fa-play"/></button>').appendTo(notificationButtons).on("click", function(evt) {
+                    var resumeButton = $('<button type="button" class="red-ui-button red-ui-button-small red-ui-flow-debugger-btn-pauseresume"><i class="fa fa-play"/></button>').appendTo(notificationButtons).on("click", function(evt) {
                         postCommand("resume");
                     });
-                    $('<button type="button" class="red-ui-button red-ui-button-small"><i class="fa fa-step-forward"/></button>').appendTo(notificationButtons).on("click", function(evt) {
+                    RED.popover.tooltip(resumeButton,RED._("node-red-debugger/flow-debugger:label.resume"))
+
+                    var stepButton = $('<button type="button" class="red-ui-button red-ui-button-small"><i class="fa fa-step-forward"/></button>').appendTo(notificationButtons).on("click", function(evt) {
                         postCommand("step")
                     });
+                    RED.popover.tooltip(stepButton,RED._("node-red-debugger/flow-debugger:label.step"))
 
                     pausedNotification = RED.notify(notificationContent,{fixed: true});
                 }
@@ -724,21 +718,15 @@
             RED.events.on("nodes:remove",onNodeRemove);
             RED.events.on("nodes:change",onNodeChange);
 
-
-            RED.comms.subscribe("flow-debugger/#", function(topic, msg) {
-                console.log(">",topic,msg)
-            })
+            //
+            // RED.comms.subscribe("flow-debugger/#", function(topic, msg) {
+            //     console.log(">",topic,msg)
+            // })
             RED.comms.subscribe("flow-debugger/state", function(topic, msg) {
                 handleStateUpdate(msg);
             });
             RED.comms.subscribe("flow-debugger/paused", function(topic, msg) {
                 pauseDebugger();
-                // $(".red-ui-flow-debugger-port-overlay.triggered").removeClass("triggered");
-                // var triggeringBreakpoint = breakpoints[msg.breakpoint];
-                // if (triggeringBreakpoint) {
-                //     triggeringBreakpoint.annotation.el.classList.add("triggered");
-                // }
-
             })
             RED.comms.subscribe("flow-debugger/resumed", resumeDebugger);
             RED.comms.subscribe("flow-debugger/messageQueued", function(topic, msg) {
