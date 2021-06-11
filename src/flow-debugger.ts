@@ -1,6 +1,6 @@
 import {Debugger,State} from "./lib/debugger"
 import {PausedEvent} from "./lib/types"
-import {Location} from "./lib/Location"
+import {Location} from "./lib/location"
 
 module.exports = (RED:any) => {
 

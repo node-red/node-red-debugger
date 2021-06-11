@@ -1,6 +1,6 @@
 {
     "name": "node-red-debugger",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "A flow debugger for Node-RED 2.x",
     "repository": {
         "type": "git",

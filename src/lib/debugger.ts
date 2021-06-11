@@ -1,4 +1,4 @@
-import * as Location from "./Location"
+import * as Location from "./location"
 import { PausedEvent, MessageEvent } from "./types"
 import { ReceiveEvent, SendEvent, EventCallback } from "../nr-types"
 import { MessageQueue } from "./MessageQueue"
