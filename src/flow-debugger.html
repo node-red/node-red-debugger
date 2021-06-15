@@ -148,6 +148,10 @@
         font-size: 9pt;
         text-anchor:end;
     }
+    .red-ui-flow-debugger-port-overlay-label.small {
+        font-size: 7pt;
+        transform: translate(2px,-1px);
+    }
     .red-ui-flow-debugger-port-overlay.active .red-ui-flow-debugger-port-overlay-label {
 
         fill: var(--red-ui-flow-debugger-breakpoint-label-active, #fff);
@@ -199,7 +203,17 @@
                             annotation.pulse();
                             if (depth > 0) {
                                 annotation.el.classList.add("hasMessages");
-                                annotation.label.textContent = depth;
+                                if (depth < 100) {
+                                    annotation.label.classList.remove("small");
+                                    annotation.label.textContent = depth;
+                                } else {
+                                    annotation.label.classList.add("small");
+                                    if (depth < 1000) {
+                                        annotation.label.textContent = depth;
+                                    } else {
+                                        annotation.label.textContent = "999+";
+                                    }
+                                }
                             } else {
                                 annotation.el.classList.remove("hasMessages");
                                 annotation.label.textContent = "";
@@ -808,9 +822,6 @@
                         console.log(jqXHR,textStatus,errorThrown);
                     }
                 });
-            }
-            function clearAnnotations() {
-
             }
             function annotatePorts(ports) {
                 $(ports).each(function() {
