@@ -14,9 +14,9 @@ module.exports = (RED:any) => {
 
 
             function publishState() {
-                // Do not retain as we don't want stale state to be saved
-                RED.comms.publish("flow-debugger/state",flowDebugger.getState())
+                RED.comms.publish("flow-debugger/state",flowDebugger.getState(), true)
             }
+            publishState();
 
             flowDebugger.on("paused", (event:PausedEvent) => {
                 RED.comms.publish("flow-debugger/paused",event)
@@ -32,7 +32,6 @@ module.exports = (RED:any) => {
                 RED.comms.publish("flow-debugger/messageQueued",event)
             });
             flowDebugger.on("messageDispatched", (event) => {
-                event.msg = RED.util.encodeObject({msg:event.msg}, {maxLength: 100});
                 RED.comms.publish("flow-debugger/messageDispatched",event)
             });
             // flowDebugger.on("step", (event) => {
