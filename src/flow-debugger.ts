@@ -1,4 +1,4 @@
-import {Debugger,State} from "./lib/debugger"
+import {Debugger} from "./lib/debugger"
 import {PausedEvent} from "./lib/types"
 import {Location} from "./lib/location"
 
@@ -12,11 +12,11 @@ module.exports = (RED:any) => {
             const flowDebugger = new Debugger(RED);
             const routeAuthHandler = RED.auth.needsPermission("flow-debugger.write");
 
+            RED.comms.publish("flow-debugger/connected",true, true)
 
             function publishState() {
-                RED.comms.publish("flow-debugger/state",flowDebugger.getState(), true)
+                RED.comms.publish("flow-debugger/state",flowDebugger.getState())
             }
-            publishState();
 
             flowDebugger.on("paused", (event:PausedEvent) => {
                 RED.comms.publish("flow-debugger/paused",event)
@@ -26,9 +26,8 @@ module.exports = (RED:any) => {
                 RED.comms.publish("flow-debugger/resumed",event)
             })
             flowDebugger.on("messageQueued", (event) => {
-                // msg = RED.util.encodeObject(msg,{maxLength:debuglength});
-                // RED.comms.publish("debug",msg);
-                event.msg = RED.util.encodeObject({msg:event.msg}, {maxLength: 100});
+                // Don't include the full message on the event
+                // event.msg = RED.util.encodeObject({msg:event.msg}, {maxLength: 100});
                 RED.comms.publish("flow-debugger/messageQueued",event)
             });
             flowDebugger.on("messageDispatched", (event) => {
@@ -38,28 +37,29 @@ module.exports = (RED:any) => {
             //
             // });
 
-            RED.httpAdmin.get(`${apiRoot}/state`, (_:any, res:any) => {
+            RED.httpAdmin.get(`${apiRoot}`, (_:any, res:any) => {
                 res.json(flowDebugger.getState());
             });
 
-            RED.httpAdmin.put(`${apiRoot}/state`, routeAuthHandler, (req:any, res:any) => {
+            RED.httpAdmin.put(`${apiRoot}`, routeAuthHandler, (req:any, res:any) => {
+                let stateChanged = false;
                 if (req.body.hasOwnProperty("enabled")) {
                     const enabled = !!req.body.enabled;
-                    let stateChanged = false;
-                    if (enabled && flowDebugger.state === State.DISABLED) {
+                    if (enabled && !flowDebugger.enabled) {
                         flowDebugger.enable();
                         stateChanged = true;
-                    } else if (!enabled && flowDebugger.state !== State.DISABLED) {
+                    } else if (!enabled && flowDebugger.enabled) {
                         flowDebugger.disable();
                         stateChanged = true;
                     }
-                    if (stateChanged) {
-                        publishState();
-                    }
                 }
-
-
-                res.sendStatus(200)
+                if (req.body.hasOwnProperty("config")) {
+                    stateChanged = flowDebugger.setConfig(req.body.config);
+                }
+                if (stateChanged) {
+                    publishState();
+                }
+                res.json(flowDebugger.getState());
             });
 
             RED.httpAdmin.get(`${apiRoot}/breakpoints`, routeAuthHandler, (_:any, res:any) => {
@@ -67,12 +67,10 @@ module.exports = (RED:any) => {
             })
             RED.httpAdmin.put(`${apiRoot}/breakpoints/:id`, routeAuthHandler, (req:any, res:any) => {
                 flowDebugger.setBreakpointActive(req.params.id, req.body.active)
-                publishState();
-                res.sendStatus(200)
+                res.json(flowDebugger.getBreakpoint(req.params.id));
             })
             RED.httpAdmin.delete(`${apiRoot}/breakpoints/:id`, routeAuthHandler, (req:any, res:any) => {
                 flowDebugger.clearBreakpoint(req.params.id)
-                publishState();
                 res.sendStatus(200)
             })
             RED.httpAdmin.post(`${apiRoot}/breakpoints`, routeAuthHandler, (req:any, res:any) => {
@@ -84,7 +82,7 @@ module.exports = (RED:any) => {
                 res.json(Array.from(flowDebugger.getMessageQueue()).map(m => {
                     const result = {
                         id: m.id,
-                        location: m.location,
+                        location: m.location.toString(),
                         destination: undefined,
                         msg: RED.util.encodeObject({msg:m.event.msg}, {maxLength: 100})
                     }

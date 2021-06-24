@@ -1,23 +1,16 @@
 import * as Location from "./location"
-import { PausedEvent, MessageEvent } from "./types"
+import { Breakpoint, PausedEvent, MessageEvent } from "./types"
 import { ReceiveEvent, SendEvent, EventCallback } from "../nr-types"
 import { MessageQueue } from "./MessageQueue"
 import { EventEmitter } from "events"
 
-export enum State {
-    DISABLED,
-    ENABLED,
-    PAUSED
-}
+const DEBUGGER_PAUSED = Symbol("node-red-debugger: paused");
 
+type DebuggerConfig = {
+    breakpointAction: "pause-all" | "pause-bp"
+}
 interface MessageQueueTable {
     [Key: string]: MessageQueue
-}
-
-interface Breakpoint {
-    id: string,
-    location: Location.Location,
-    active: boolean
 }
 
 let BREAKPOINT_ID = 1;
@@ -25,21 +18,27 @@ let BREAKPOINT_ID = 1;
 export class Debugger extends EventEmitter {
 
     RED: any;
-    state: State;
+    enabled: boolean;
+    pausedLocations: Set<string>;
     breakpoints: Map<string, Breakpoint>;
     breakpointsByLocation: Map<string, Breakpoint>;
     eventNumber: number;
     queuesByLocation: MessageQueueTable;
     messageQueue: MessageQueue;
+    config: DebuggerConfig;
 
     // Events:
     //  paused / resumed
 
     constructor(RED: any) {
         super();
+        this.config = {
+            breakpointAction: "pause-all"
+        };
         this.RED = RED;
-        this.state = State.DISABLED;
+        this.enabled = false;
         this.breakpoints = new Map();
+        this.pausedLocations = new Set();
         this.breakpointsByLocation = new Map();
         this.queuesByLocation = {};
         this.messageQueue = new MessageQueue("Time");
@@ -51,27 +50,34 @@ export class Debugger extends EventEmitter {
 
     private checkLocation(location:Location.Location, event:SendEvent|ReceiveEvent, done:EventCallback) {
         const breakpointId:string = location.getBreakpointLocation();
-        const locationId:string = location.toString();
-        if (this.state === State.ENABLED) {
-
-            const bp = this.breakpointsByLocation.get(breakpointId);
-            if (bp && bp.active) {
+        if (this.isNodePaused(location.id)) {
+            this.queueEvent(location,event,done);
+        } else {
+            if (event.msg && event.msg[DEBUGGER_PAUSED]) {
                 this.pause({
-                    reason: "breakpoint",
-                    breakpoint: bp.id
+                    reason: "step",
+                    node: location.id
                 })
-                this.queueEvent(locationId,event,done);
+                this.queueEvent(location,event,done);
             } else {
-                done();
+                const bp = this.breakpointsByLocation.get(breakpointId);
+                if (bp && bp.active) {
+                    this.pause({
+                        reason: "breakpoint",
+                        node: location.id,
+                        breakpoint: bp.id
+                    })
+                    this.queueEvent(location,event,done);
+                } else {
+                    done();
+                }
             }
-        } else if (this.state === State.PAUSED) {
-            this.queueEvent(locationId,event,done);
         }
     }
 
     enable() {
         this.log("Enabled");
-        this.state = State.ENABLED;
+        this.enabled = true;
         this.RED.hooks.add("preRoute.flow-debugger", (sendEvent:SendEvent, done:EventCallback) => {
             if (isNodeInSubflowModule(sendEvent.source.node)) {
                 // Inside a subflow module - don't pause the event
@@ -95,12 +101,13 @@ export class Debugger extends EventEmitter {
             this.checkLocation(eventLocation, sendEvent, done);
         });
         this.RED.hooks.add("onReceive.flow-debugger", (receiveEvent:ReceiveEvent, done:EventCallback) => {
-            if (this.state === State.PAUSED && receiveEvent.destination.node.type === "inject") {
-                // Inside a subflow module - don't pause the event
+            if (receiveEvent.destination.node.type === "inject") {
+                // Never pause an Inject node's internal receive event
                 done();
                 return;
             }
             if (isNodeInSubflowModule(receiveEvent.destination.node)) {
+                // Inside a subflow module - don't pause the event
                 done();
                 return;
             }
@@ -112,63 +119,99 @@ export class Debugger extends EventEmitter {
 
     disable() {
         this.log("Disabled");
-        this.state = State.DISABLED;
+        this.enabled = false;
         this.RED.hooks.remove("*.flow-debugger");
+        this.pausedLocations.clear();
         this.drainQueues(true);
     }
     pause(event?:PausedEvent) {
-        if (this.state === State.ENABLED) {
-            this.state = State.PAUSED;
-            const logReason = event?("@"+this.breakpoints.get(event.breakpoint).location.toString()):"manual";
+        if (this.enabled) {
+            let logReason:string;
+            if (event) {
+                if (this.config.breakpointAction === "pause-all") {
+                    this.pausedLocations.clear();
+                    this.pausedLocations.add("*");
+                } else {
+                    this.pausedLocations.add(event.node);
+                }
+                if (event.reason === "breakpoint") {
+                    logReason = "@"+this.breakpoints.get(event.breakpoint).location.toString()
+                } else if (event.reason === "step") {
+                    logReason = "@"+event.node
+                }
+                event.pausedLocations = [...this.pausedLocations];
+            } else {
+                // Manual pause
+                this.pausedLocations.clear();
+                this.pausedLocations.add("*");
+                logReason = "manual";
+            }
             this.log(`Flows paused: ${logReason}`);
-            this.emit("paused", event||{ reason: "manual", breakpoint: null})
+            this.emit("paused",  event || { reason: "manual" })
         }
     }
-    resume() {
-        if (this.state === State.PAUSED) {
-            this.log("Flows resumed");
-            this.state = State.ENABLED;
-            this.emit("resumed", {})
-            this.drainQueues();
+    resume(nodeId?:string) {
+        if (this.pausedLocations.size === 0) {
+            return;
         }
+        if (!nodeId || nodeId === "*") {
+            console.log("resume - clear all locations")
+            this.pausedLocations.clear();
+        } else if (nodeId && this.pausedLocations.has(nodeId)) {
+            this.pausedLocations.delete(nodeId);
+        } else {
+            // Nothing has been unpaused
+            return;
+        }
+        this.log("Flows resumed");
+        this.emit("resumed", { node: nodeId })
+        this.drainQueues();
     }
     deleteMessage(messageId:number) {
         const nextEvent = this.messageQueue.get(messageId);
         if (nextEvent) {
             this.messageQueue.remove(nextEvent);
-            this.queuesByLocation[nextEvent.location].remove(nextEvent);
-            const queueDepth = this.queuesByLocation[nextEvent.location].length;
+            const nextEventLocation = nextEvent.location.toString();
+            this.queuesByLocation[nextEventLocation].remove(nextEvent);
+            const queueDepth = this.queuesByLocation[nextEventLocation].length;
             if (queueDepth === 0) {
-                delete this.queuesByLocation[nextEvent.location]
+                delete this.queuesByLocation[nextEventLocation]
             }
-            this.emit("messageDispatched", { id: nextEvent.id, location: nextEvent.location, depth: queueDepth })
+            this.emit("messageDispatched", { id: nextEvent.id, location: nextEventLocation, depth: queueDepth })
             // Call done with false to prevent any further processing
             nextEvent.done(false);
         }
     }
+    private isNodePaused(nodeId:string) {
+        return this.pausedLocations.has("*") || this.pausedLocations.has(nodeId);
+    }
     private drainQueues(quiet?:boolean) {
-        let nextEvent:MessageEvent;
-        do {
-            nextEvent = this.messageQueue.next();
-            if (nextEvent) {
-                this.queuesByLocation[nextEvent.location].remove(nextEvent);
-                const queueDepth = this.queuesByLocation[nextEvent.location].length;
-
+        for (const nextEvent of this.messageQueue) {
+            const eventNodeId = nextEvent.location.id;
+            if (!this.isNodePaused(eventNodeId)) {
+                const nextEventLocation = nextEvent.location.toString();
+                this.queuesByLocation[nextEventLocation].remove(nextEvent);
+                const queueDepth = this.queuesByLocation[nextEventLocation].length;
                 if (queueDepth === 0) {
-                    delete this.queuesByLocation[nextEvent.location]
+                    delete this.queuesByLocation[nextEventLocation]
                 }
                 if (!quiet) {
-                    this.emit("messageDispatched", { id: nextEvent.id, location: nextEvent.location, depth: queueDepth })
+                    this.emit("messageDispatched", { id: nextEvent.id, location: nextEventLocation, depth: queueDepth })
+                }
+                if (nextEvent.event.msg[DEBUGGER_PAUSED]) {
+                    delete nextEvent.event.msg[DEBUGGER_PAUSED];
                 }
                 nextEvent.done();
+                this.messageQueue.remove(nextEvent);
             }
-        } while (this.state !== State.PAUSED && nextEvent)
+        }
     }
     setBreakpoint(location:Location.Location): string {
-        const bp = {
+        const bp:Breakpoint = {
             id: (BREAKPOINT_ID++)+"",
             location,
-            active: true
+            active: true,
+            mode: "all"
         }
         this.breakpoints.set(bp.id, bp);
         this.breakpointsByLocation.set(location.toString(), bp);
@@ -197,7 +240,7 @@ export class Debugger extends EventEmitter {
     }
 
     step(messageId?:number) {
-        if (this.state === State.PAUSED) {
+        if (this.enabled) {
             let nextEvent:MessageEvent;
             if (messageId) {
                 nextEvent = this.messageQueue.get(messageId);
@@ -208,26 +251,40 @@ export class Debugger extends EventEmitter {
                 nextEvent = this.messageQueue.next();
             }
             if (nextEvent) {
+                const nextEventLocation = nextEvent.location.toString();
+                this.log("Step: "+nextEventLocation);
 
-                this.log("Step: "+nextEvent.location.toString());
-
-                this.queuesByLocation[nextEvent.location].remove(nextEvent);
-                const queueDepth = this.queuesByLocation[nextEvent.location].length;
+                this.queuesByLocation[nextEventLocation].remove(nextEvent);
+                const queueDepth = this.queuesByLocation[nextEventLocation].length;
                 if (queueDepth === 0) {
-                    delete this.queuesByLocation[nextEvent.location]
+                    delete this.queuesByLocation[nextEventLocation]
                 }
-                this.emit("messageDispatched", { id: nextEvent.id, location: nextEvent.location, depth: queueDepth })
+                nextEvent.event.msg[DEBUGGER_PAUSED] = true;
+                this.emit("messageDispatched", { id: nextEvent.id, location: nextEventLocation, depth: queueDepth })
                 nextEvent.done();
             }
         }
     }
+
+    setConfig(newConfig: object): boolean {
+        let changed = false;
+        for (const key in this.config) {
+            if (newConfig.hasOwnProperty(key) && this.config[key] !== newConfig[key]) {
+                changed = true;
+                this.config[key] = newConfig[key];
+            }
+        }
+        return changed;
+    }
+
     getState(): object {
-        if (this.state === State.DISABLED) {
+        if (!this.enabled) {
             return { enabled: false }
         }
         return {
             enabled: true,
-            paused: this.state === State.PAUSED,
+            pausedLocations: [...this.pausedLocations],
+            config: this.config,
             breakpoints: this.getBreakpoints(),
             queues: this.getMessageQueueDepths()
         }
@@ -245,7 +302,7 @@ export class Debugger extends EventEmitter {
     }
 
     getMessageQueueDepths(): object {
-        if (this.state === State.DISABLED) {
+        if (!this.enabled) {
             return {};
         }
         const result = {};
@@ -270,14 +327,15 @@ ${this.queuesByLocation[id].dump()}
         })
         return result;
     }
-    private queueEvent(locationId:string, event:SendEvent|ReceiveEvent, done:EventCallback) {
+    private queueEvent(location:Location.Location, event:SendEvent|ReceiveEvent, done:EventCallback) {
+        const locationId = location.toString();
         if (!this.queuesByLocation[locationId]) {
             this.queuesByLocation[locationId] = new MessageQueue("Location");
         }
         const messageEvent:MessageEvent = {
             id: this.eventNumber++,
             event,
-            location: locationId,
+            location,
             done,
             nextByLocation: null,
             previousByLocation: null,

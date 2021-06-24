@@ -1,0 +1,234 @@
+.red-ui-flow-debugger {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+.red-ui-flow-debugger-stack {
+    overflow-y: scroll;
+    background: var(--red-ui-primary-background);
+}
+.red-ui-flow-debugger-stack .red-ui-palette-category:last-child {
+    border-bottom: 1px solid var(--red-ui-secondary-border-color);
+}
+.red-ui-flow-debugger.disabled .red-ui-sidebar-header > :not(:first-child) {
+    display: none;
+}
+.red-ui-flow-debugger.disabled .red-ui-flow-debugger-stack {
+    display: none;
+}
+.red-ui-flow-debugger .red-ui-sidebar-header {
+    flex: 0 0 auto;
+    display: flex;
+}
+.red-ui-flow-debugger .red-ui-sidebar-header > * {
+    flex-shrink: 0;
+}
+.red-ui-flow-debugger .red-ui-editableList-border {
+    border: none;
+    border-radius: 0;
+}
+.red-ui-flow-debugger .red-ui-editableList-container {
+    padding: 0;
+}
+.red-ui-flow-debugger .red-ui-editableList-container li {
+    padding: 0;
+}
+.red-ui-flow-debugger .red-ui-editableList-container li .red-ui-editableList-item-remove {
+    right: 3px;
+}
+.red-ui-flow-debugger-breakpoint-list, .red-ui-flow-debugger-message-list {
+    min-height: 30px;
+}
+.red-ui-flow-debugger-breakpoint-list .red-ui-editableList-item-content {
+    padding: 6px 8px;
+}
+.red-ui-flow-debugger-message-list .red-ui-editableList-item-content {
+    padding: 6px 0px;
+}
+.red-ui-flow-debugger-message .red-ui-debug-msg-meta {
+    display: flex;
+    padding-left: 10px;
+}
+.red-ui-flow-debugger-breakpoint {
+    user-select: none;
+    display: flex;
+    align-items: center;
+}
+
+.red-ui-flow-debugger-breakpoint .red-ui-node-icon {
+    margin-left: 6px;
+    margin-right: 6px;
+}
+
+.red-ui-flow-debugger-breakpoint.red-ui-flow-debugger-breakpoint-input .red-ui-node-icon:before,
+.red-ui-flow-debugger-breakpoint.red-ui-flow-debugger-breakpoint-output .red-ui-node-icon:after {
+    position: absolute;
+    top: calc(50% - 4px);
+    left: -5px;
+    width: 7px;
+    height: 7px;
+    display: block;
+    content: "";
+    background: var(--red-ui-node-port-background);
+    border: 1px solid var(--red-ui-node-border);
+    border-radius: 2px;
+}
+
+.red-ui-flow-debugger-breakpoint.red-ui-flow-debugger-breakpoint-output .red-ui-node-icon:after {
+    left: 20px;
+}
+.red-ui-flow-debugger .red-ui-editableList-container li.highlight {
+    background: #e6e6e6;
+}
+.red-ui-flow-debugger .red-ui-editableList-container li.pending {
+    opacity: 0.4;
+}
+.red-ui-flow-debugger-breakpoint input[type=checkbox] {
+    margin-top: 0;
+    margin-right: 4px;
+}
+.red-ui-flow-debugger-breakpoint > :nth-child(2) {
+    flex-grow: 1;
+    flex-shrink: 1;
+    overflow: hidden;
+}
+.red-ui-flow-debugger-breakpoint:not(.active) *:not(:first-child) {
+    opacity: 0.7;
+}
+.red-ui-flow-debugger-breakpoint-port {
+    /* padding-left: 5px;
+    font-size: 0.9em;
+    width: 55px; */
+    flex-shrink: 0;
+    height: 22px;
+}
+.red-ui-flow-debugger-breakpoint-port svg {
+    stroke:#f00;
+    stroke-width: 1;
+    fill: none;
+}
+
+/* Flow Annotations */
+.red-ui-flow-debugger-port-overlay {
+    cursor: pointer;
+    display: none;
+}
+
+.red-ui-flow-debugger-port-overlay-background {
+    fill: var(--red-ui-flow-debugger-breakpoint-fill, #fff);
+    stroke-width: 1;
+    stroke: var(--red-ui-flow-debugger-breakpoint-stroke, #58d);
+}
+
+.red-ui-flow-debugger-port-overlay-background.red-ui-flow-debugger-port-overlay-pulse {
+    fill: none !important;
+    stroke-width: 1;
+    stroke: var(--red-ui-flow-debugger-breakpoint-stroke, #58d);
+    animation: red-ui-flow-debugger-port-overlay-pulse-kf 0.6s linear;
+}
+
+@keyframes red-ui-flow-debugger-port-overlay-pulse-kf {
+    0%{
+        transform: scale(0.8);
+        opacity: 1;
+    }
+    50%{
+        opacity: 0.5;
+    }
+    70%{
+        opacity: 0.2;
+    }
+    100%{
+        transform: scale(2,1.5);
+        opacity: 0;
+    }
+}
+
+.red-ui-flow-debugger-port-overlay.active .red-ui-flow-debugger-port-overlay-background {
+    fill: var(--red-ui-flow-debugger-breakpoint-active-fill, #59e);
+    stroke: var(--red-ui-flow-debugger-breakpoint-active-stroke, #36b);
+}
+.red-ui-flow-debugger-port-overlay.inactive .red-ui-flow-debugger-port-overlay-background {
+    fill: var(--red-ui-flow-debugger-breakpoint-inactive-fill, #def);
+    stroke: var(--red-ui-flow-debugger-breakpoint-inactive-stroke, #59e);
+}
+.red-ui-flow-debugger-port-overlay.pending .red-ui-flow-debugger-port-overlay-background {
+    fill: var(--red-ui-flow-debugger-breakpoint-inactive-fill, #def);
+    stroke: var(--red-ui-flow-debugger-breakpoint-inactive-stroke, #59e);
+    stroke-dasharray: 4 2;
+    opacity: 0.8;
+}
+.red-ui-flow-debugger-port-overlay-highlight {
+    stroke-width: 1.5;
+    fill: none;
+    stroke-dasharray: 4 2;
+    stroke: var(--red-ui-node-selected-color, #ff7f0e);
+    transform: scale(1.2, 1.5);
+
+}
+
+.red-ui-flow-debugger-port-overlay.pending,
+.red-ui-flow-debugger-port-overlay.active,
+.red-ui-flow-debugger-port-overlay.inactive,
+.red-ui-flow-debugger-port-overlay.hasMessages {
+    display: inherit;
+}
+.red-ui-flow-debugger-port-overlay-label {
+    stroke-width: 0;
+    fill: var(--red-ui-flow-debugger-breakpoint-label, var(--red-ui-node-label-color, #000));
+    font-size: 9pt;
+    text-anchor:end;
+}
+.red-ui-flow-debugger-port-overlay-label.small {
+    font-size: 7pt;
+    transform: translate(2px,-1px);
+}
+.red-ui-flow-debugger-port-overlay.active .red-ui-flow-debugger-port-overlay-label {
+
+    fill: var(--red-ui-flow-debugger-breakpoint-label-active, #fff);
+}
+
+.red-ui-flow-debugger-notification {
+    display: flex;
+}
+.red-ui-flow-debugger-notification > .red-ui-flow-debugger-toolbar {
+    flex-grow: 1;
+    text-align: right;
+}
+.red-ui-flow-debugger-message:hover .red-ui-flow-debugger-msg-tools {
+    display: inline;
+}
+.red-ui-flow-debugger-msg-tools {
+    position: absolute;
+    right: 5px;
+    display: none;
+}
+.red-ui-flow-debugger-settings {
+    background: var(--red-ui-tertiary-background);
+    color: var(--red-ui-primary-text-color);
+}
+.red-ui-flow-debugger-settings div {
+    margin: 0 0 6px 0;
+}
+.red-ui-flow-debugger-settings label {
+    display: flex;
+    align-items: center;
+    margin-left: 10px;
+}
+.red-ui-flow-debugger-settings input[type="radio"] {
+    margin: 0 5px 0 0;
+}
+.red-ui-flow-debugger-message-load {
+    display: block;
+    padding: 0;
+    font-size: 0.8em;
+    color: var(--red-ui-tertiary-text-color);
+}
+.red-ui-flow-debugger-message-load  a {
+    display: block;
+    padding: 6px 0 8px 25px;
+}
+.red-ui-flow-debugger-annotation-paused {
+    stroke: var(--red-ui-flow-debugger-breakpoint-active-stroke, #36b);
+
+}

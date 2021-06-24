@@ -11,6 +11,17 @@
         "step": "Step flows",
         "pause": "Pause flows",
         "deleteMessage": "Delete message",
-        "stepMessage": "Step message"
+        "stepMessage": "Step message",
+        "filter": {
+            "label": "Filter messages",
+            "all": "all nodes",
+            "flow": "current flow"
+        },
+        "settings": "Debugger options",
+        "breakpointAction": {
+            "label": "Breakpoint action",
+            "pause-all": "pause all nodes",
+            "pause-bp": "pause at breakpoint"
+        }
     }
 }

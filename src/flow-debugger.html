@@ -1,181 +1,14 @@
-<style>
-    .red-ui-flow-debugger {
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-    }
-    .red-ui-flow-debugger-stack {
-        overflow-y: scroll;
-    }
-    .red-ui-flow-debugger.disabled .red-ui-sidebar-header > :not(:first-child) {
-        display: none;
-    }
-    .red-ui-flow-debugger.disabled .red-ui-flow-debugger-stack {
-        display: none;
-    }
-    .red-ui-flow-debugger .red-ui-sidebar-header {
-        flex: 0 0 auto;
-        display: flex;
-    }
-    .red-ui-flow-debugger .red-ui-sidebar-header > * {
-        flex-shrink: 0;
-    }
-    .red-ui-flow-debugger .red-ui-editableList-border {
-        border: none;
-        border-radius: 0;
-    }
-    .red-ui-flow-debugger .red-ui-editableList-container {
-        padding: 0;
-    }
-    .red-ui-flow-debugger .red-ui-editableList-container li {
-        padding: 0;
-    }
-    .red-ui-flow-debugger .red-ui-editableList-container li .red-ui-editableList-item-remove {
-        right: 3px;
-    }
-    .red-ui-flow-debugger-breakpoint-list, .red-ui-flow-debugger-message-list {
-        min-height: 30px;
-    }
-    .red-ui-flow-debugger-breakpoint-list .red-ui-editableList-item-content {
-        padding: 6px 8px;
-    }
-    .red-ui-flow-debugger-message-list .red-ui-editableList-item-content {
-        padding: 6px 0px;
-    }
-    .red-ui-flow-debugger-message .red-ui-debug-msg-meta {
-        display: flex;
-        padding-left: 10px;
-    }
-    .red-ui-flow-debugger-breakpoint {
-        user-select: none;
-        display: flex;
-        align-items: center;
-    }
-    .red-ui-flow-debugger .red-ui-editableList-container li.highlight {
-        background: #e6e6e6;
-    }
-    .red-ui-flow-debugger .red-ui-editableList-container li.pending {
-        opacity: 0.4;
-    }
-    .red-ui-flow-debugger-breakpoint input[type=checkbox] {
-        margin-top: 0;
-        margin-right: 4px;
-    }
-    .red-ui-flow-debugger-breakpoint > :nth-child(2) {
-        flex-grow: 1;
-        flex-shrink: 1;
-        overflow: hidden;
-    }
-    .red-ui-flow-debugger-breakpoint:not(.active) *:not(:first-child) {
-        opacity: 0.7;
-    }
-    .red-ui-flow-debugger-breakpoint-port {
-        padding-left: 5px;
-        font-size: 0.9em;
-        width: 55px;
-        flex-shrink: 0;
-
-    }
-
-    /* Flow Annotations */
-    .red-ui-flow-debugger-port-overlay {
-        cursor: pointer;
-        display: none;
-    }
-
-    .red-ui-flow-debugger-port-overlay-background {
-        fill: var(--red-ui-flow-debugger-breakpoint-fill, #fff);
-        stroke-width: 1;
-        stroke: var(--red-ui-flow-debugger-breakpoint-stroke, #58d);
-    }
-
-    .red-ui-flow-debugger-port-overlay-background.red-ui-flow-debugger-port-overlay-pulse {
-        fill: none !important;
-        stroke-width: 1;
-        stroke: var(--red-ui-flow-debugger-breakpoint-stroke, #58d);
-        animation: red-ui-flow-debugger-port-overlay-pulse-kf 0.6s linear;
-    }
-
-    @keyframes red-ui-flow-debugger-port-overlay-pulse-kf {
-        0%{
-            transform: scale(0.8);
-            opacity: 1;
-        }
-        50%{
-            opacity: 0.5;
-        }
-        70%{
-            opacity: 0.2;
-        }
-        100%{
-            transform: scale(2,1.5);
-            opacity: 0;
-        }
-    }
-
-    .red-ui-flow-debugger-port-overlay.active .red-ui-flow-debugger-port-overlay-background {
-        fill: var(--red-ui-flow-debugger-breakpoint-active-fill, #59e);
-        stroke: var(--red-ui-flow-debugger-breakpoint-active-stroke, #36b);
-    }
-    .red-ui-flow-debugger-port-overlay.inactive .red-ui-flow-debugger-port-overlay-background {
-        fill: var(--red-ui-flow-debugger-breakpoint-inactive-fill, #def);
-        stroke: var(--red-ui-flow-debugger-breakpoint-inactive-stroke, #59e);
-    }
-    .red-ui-flow-debugger-port-overlay.pending .red-ui-flow-debugger-port-overlay-background {
-        fill: var(--red-ui-flow-debugger-breakpoint-inactive-fill, #def);
-        stroke: var(--red-ui-flow-debugger-breakpoint-inactive-stroke, #59e);
-        stroke-dasharray: 4 2;
-        opacity: 0.8;
-    }
-    .red-ui-flow-debugger-port-overlay-highlight {
-        stroke-width: 1.5;
-        fill: none;
-        stroke-dasharray: 4 2;
-        stroke: var(--red-ui-node-selected-color, #ff7f0e);
-        transform: scale(1.2, 1.5);
-
-    }
-
-    .red-ui-flow-debugger-port-overlay.pending,
-    .red-ui-flow-debugger-port-overlay.active,
-    .red-ui-flow-debugger-port-overlay.inactive,
-    .red-ui-flow-debugger-port-overlay.hasMessages {
-        display: inherit;
-    }
-    .red-ui-flow-debugger-port-overlay-label {
-        stroke-width: 0;
-        fill: var(--red-ui-flow-debugger-breakpoint-label, var(--red-ui-node-label-color, #000));
-        font-size: 9pt;
-        text-anchor:end;
-    }
-    .red-ui-flow-debugger-port-overlay-label.small {
-        font-size: 7pt;
-        transform: translate(2px,-1px);
-    }
-    .red-ui-flow-debugger-port-overlay.active .red-ui-flow-debugger-port-overlay-label {
-
-        fill: var(--red-ui-flow-debugger-breakpoint-label-active, #fff);
-    }
-
-    .red-ui-flow-debugger-notification {
-        display: flex;
-    }
-    .red-ui-flow-debugger-notification > .red-ui-flow-debugger-toolbar {
-        flex-grow: 1;
-        text-align: right;
-    }
-    .red-ui-flow-debugger-message:hover .red-ui-flow-debugger-msg-tools {
-        display: inline;
-    }
-    .red-ui-flow-debugger-msg-tools {
-        position: absolute;
-        right: 5px;
-        display: none;
-    }
-</style>
+<link rel="stylesheet" href="resources/node-red-debugger/style.css">
 <script type="text/javascript">
 (function() {
-    var content;
+    if (!RED.view.annotations) {
+        RED.notify("Flow Debugger requires Node-RED 2.0.0-beta.2 or later");
+        return;
+    }
+    var MAX_MESSAGE_LOADED = 10;
+    var sidebarContent;
+    var activeMessageFilter = 'all';
+
     function show() {
         RED.sidebar.show("flow-debugger");
     }
@@ -184,16 +17,17 @@
         onadd: function() {
             function parseLocation(location) {
                 var parts = /^(.*?)\/([^\/\[]+)\[(i|o)\]\[(\d+)\]$/.exec(location);
-
+                var node = RED.nodes.node(parts[2]);
                 return {
+                    location: location,
+                    z: node?node.z:null,
                     path: parts[1],
                     id:parts[2],
                     portType: parts[3]==='i'?"input":"output",
                     portIndex: parts[4]
                 }
             }
-            function updateQueueDepth(locationId, depth) {
-                var location = parseLocation(locationId);
+            function updateQueueDepth(location, depth) {
                 queueDepths[location.id] = queueDepths[location.id] || { input: {}, output:{} }
                 if (queueDepths[location.id][location.portType][location.portIndex] !== depth) {
                     queueDepths[location.id][location.portType][location.portIndex] = depth;
@@ -239,6 +73,9 @@
                         }
                     }
                 }
+                if (pausedLocations.has('*') || pausedLocations.has(node.id)) {
+                    node._debugger_paused = true;
+                }
             }
             function onNodeRemove(node) {
                 if (breakpointsByNode[node.id]) {
@@ -249,19 +86,47 @@
                 delete breakpointsByNode[node.id];
                 delete queueDepths[node.id];
             }
+            function refreshState() {
+                $.ajax({
+                    url: "flow-debugger",
+                    type:"GET",
+                    success: function(state) {
+                        handleStateUpdate(state);
+                    },
+                    error: function(jqXHR,textStatus,errorThrown) {
+                        console.log(jqXHR,textStatus,errorThrown);
+                    }
+                });
+                $.ajax({
+                    url: "flow-debugger/messages",
+                    type:"GET",
+                    success: function(messages) {
+                        messageList.editableList('empty');
+                        messages.forEach(function(msg) {
+                            messageList.editableList('addItem', {
+                                id: msg.id,
+                                location: parseLocation(msg.location),
+                                msg: msg.msg
+                            })
+                        })
+                    },
+                    error: function(jqXHR,textStatus,errorThrown) {
+                        console.log(jqXHR,textStatus,errorThrown);
+                    }
+                });
+            }
             function handleStateUpdate(state) {
                 debuggerState = state;
+                pausedLocations = new Set(state.pausedLocations||[]);
+                debuggerState.paused = pausedLocations.size > 0;
+
+
                 if (debuggerEnabled !== state.enabled ) {
                     handlingCommsEvent = true;
                     debuggerEnabledToggle.prop("checked", !!state.enabled).trigger("change");
                     handlingCommsEvent = false;
                 }
-                // if (state.enabled) {
-                //     $(".red-ui-flow-debugger-btn-pauseresume i")
-                //         .removeClass("fa-play fa-pause")
-                //         .addClass(debuggerState.paused?"fa-play":"fa-pause");
-                // }
-                if (state.paused) {
+                if (pausedLocations.size > 0) {
                     pauseDebugger();
                 } else {
                     if (pausedNotification) {
@@ -298,7 +163,7 @@
                 if (state.queues) {
                     for (var i in state.queues) {
                         if (state.queues.hasOwnProperty(i)) {
-                            updateQueueDepth(i,state.queues[i].depth);
+                            updateQueueDepth(parseLocation(i),state.queues[i].depth);
                         }
                     }
                 }
@@ -324,11 +189,12 @@
             var annotations = {};
             var queueDepths = {};
             var queuedMessages = {};
+            var pausedLocations = new Set();
             var pausedNotification;
             var debuggerEnabled = false;
             var handlingCommsEvent = false;
 
-            content = $("<div>").addClass("red-ui-flow-debugger disabled").css({"position":"relative","height":"100%"});
+            sidebarContent = $("<div>").addClass("red-ui-flow-debugger disabled").css({"position":"relative","height":"100%"});
             var footerToolbar = $('<div></div>');
 
             RED.sidebar.addTab({
@@ -336,16 +202,19 @@
                 label: RED._("node-red-debugger/flow-debugger:label.debuggerShort"),
                 name: RED._("node-red-debugger/flow-debugger:label.debugger"),
                 iconClass: "fa fa-flask",
-                content: content,
+                content: sidebarContent,
                 toolbar: footerToolbar,
                 enableOnEdit: true,
                 action: "core:show-flow-debugger-tab"
             });
 
-            var header = $("<div>", {class:"red-ui-sidebar-header"}).appendTo(content);
+            var header = $("<div>", {class:"red-ui-sidebar-header"}).appendTo(sidebarContent);
 
             var headerLeftSpan = $('<span>').css({"flex-grow":1,"text-align":"left"}).appendTo(header);
-            var headerRightSpan = $('<span>',{class:"red-ui-flow-debugger-toolbar button-group"}).appendTo(header);
+            var headerRightSpan = $('<span>',{class:"red-ui-flow-debugger-toolbar"}).appendTo(header);
+            var headerPlayControl = $('<span>',{class:"button-group"}).appendTo(headerRightSpan);
+            var headerStepControl = $('<span>',{class:"button-group"}).appendTo(headerRightSpan);
+
 
             var debuggerEnabledToggle = $('<input type="checkbox"/>').appendTo(headerLeftSpan).toggleButton({
                 enabledIcon: "fa-toggle-on",
@@ -355,19 +224,19 @@
                 debuggerEnabled = this.checked;
                 if (!handlingCommsEvent) {
                     $.ajax({
-                        url: "flow-debugger/state",
+                        url: "flow-debugger",
                         contentType: "application/json",
                         type:"PUT",
                         data: JSON.stringify({enabled: debuggerEnabled}),
                         success: function(resp) {
-                            content.toggleClass("disabled",!debuggerEnabled);
+                            sidebarContent.toggleClass("disabled",!debuggerEnabled);
                         },
                         error: function(jqXHR,textStatus,errorThrown) {
                             console.log(jqXHR,textStatus,errorThrown);
                         }
                     });
                 } else {
-                    content.toggleClass("disabled",!debuggerEnabled);
+                    sidebarContent.toggleClass("disabled",!debuggerEnabled);
                 }
                 if (debuggerEnabled) {
                     enableDebugger();
@@ -377,7 +246,7 @@
 
             });
 
-            var playPauseButton = $('<button type="button" class="red-ui-sidebar-header-button red-ui-flow-debugger-btn-pauseresume"><i class="fa fa-pause"/></button>').appendTo(headerRightSpan).on("click", function(evt) {
+            var playPauseButton = $('<button type="button" class="red-ui-sidebar-header-button red-ui-flow-debugger-btn-pauseresume"><i class="fa fa-pause"/></button>').appendTo(headerPlayControl).on("click", function(evt) {
                 if (debuggerState.paused) {
                     postCommand("resume");
                 } else {
@@ -388,13 +257,69 @@
                 return RED._("node-red-debugger/flow-debugger:label."+(debuggerState.paused?"resume":"pause"))
             });
 
-            var stepButton = $('<button type="button" disabled class="red-ui-sidebar-header-button red-ui-flow-debugger-btn-step"><i class="fa fa-step-forward"/></button>').appendTo(headerRightSpan).on("click", function(evt) {
+            var stepButton = $('<button type="button" disabled class="red-ui-sidebar-header-button red-ui-flow-debugger-btn-step"><i class="fa fa-step-forward"/></button>').appendTo(headerPlayControl).on("click", function(evt) {
                 postCommand("step")
             });
             RED.popover.tooltip(stepButton,RED._("node-red-debugger/flow-debugger:label.step"));
 
 
-            var stackContainer = $('<div>',{class:"red-ui-flow-debugger-stack"}).css({height:"100%"}).appendTo(content);
+
+            var settingsPanelOpen = false;
+            var settingsButton = $('<button class="red-ui-sidebar-header-button" style="min-width: 30px"><i class="fa fa-cog"></i></button>').appendTo(headerStepControl).on("click", function(evt) {
+                evt.preventDefault();
+                evt.stopPropagation();
+                if (!settingsPanelOpen) {
+                    settingsButton.find("i").removeClass("fa-cog").addClass("fa-close");
+                    var breakpointAction = debuggerState.config.breakpointAction || "pause-all";
+                    settingsPanel.find('input[value="'+breakpointAction+'"]').attr("checked",true);
+                    // settingsPanelPopover.container.width(breakpointSection.header.width()+20);
+                    settingsPanelPopover.show({
+                        offset:[settingsButton.outerWidth(),11],
+                        align: 'left',
+                        target:settingsButton,//breakpointSection.header,
+                        dispose: false,
+                        closeButton: settingsButton,
+                        onclose: function() {
+                            settingsButton.find("i").removeClass("fa-close").addClass("fa-cog");
+                            settingsPanelOpen = false;
+                        }
+                    })
+                    settingsPanelOpen = true;
+                    settingsPanel.find(':focusable').eq(0).focus();
+                } else {
+                    settingsPanelOpen = false;
+                    settingsButton.find("i").removeClass("fa-close").addClass("fa-cog");
+                    settingsPanelPopover.hide(false);
+                }
+            });
+            RED.popover.tooltip(settingsButton,RED._("node-red-debugger/flow-debugger:label.settings"))
+            var settingsPanel = $('<div class="red-ui-flow-debugger-settings"></div>').css({padding: "8px"});
+            $('<div data-i18n="node-red-debugger/flow-debugger:label.breakpointAction.label"></div>').appendTo(settingsPanel);
+            $('<label><input type="radio" class="red-ui-sidebar-header-button-toggle" name="red-ui-flow-debugger-pause-option" value="pause-all"><span data-i18n="node-red-debugger/flow-debugger:label.breakpointAction.pause-all"></span></label>').appendTo(settingsPanel);
+            $('<label><input type="radio" class="red-ui-sidebar-header-button-toggle" name="red-ui-flow-debugger-pause-option" value="pause-bp"><span data-i18n="node-red-debugger/flow-debugger:label.breakpointAction.pause-bp"></span></label>').appendTo(settingsPanel);
+            settingsPanel.i18n();
+            settingsPanel.find('input[type="radio"]').on("change", function(evt) {
+                $.ajax({
+                    url: "flow-debugger",
+                    contentType: "application/json",
+                    type:"PUT",
+                    data: JSON.stringify({config: {breakpointAction: this.value}}),
+                    success: function(resp) {},
+                    error: function(jqXHR,textStatus,errorThrown) {
+                        console.log(jqXHR,textStatus,errorThrown);
+                    }
+                });
+            });
+            settingsPanel.on("mouseleave", function() {
+                settingsPanelOpen = false;
+                settingsButton.find("i").removeClass("fa-close").addClass("fa-cog");
+                settingsPanelPopover.hide(false);
+            })
+            var settingsPanelPopover = RED.popover.panel(settingsPanel);
+
+
+
+            var stackContainer = $('<div>',{class:"red-ui-flow-debugger-stack"}).css({height:"100%"}).appendTo(sidebarContent);
             var sections = RED.stack.create({
                 container: stackContainer
             });
@@ -404,18 +329,6 @@
             });
             breakpointSection.expand();
             breakpointSection.content.css({height:"100%"});
-
-            // var addingBreakpoints = false;
-            // var bg = $('<div style="float: right"></div>').appendTo(breakpointSection.header);
-            // var refreshButton = $('<button class="red-ui-button red-ui-button-small"><i class="fa fa-plus"></i></button>').appendTo(bg).on("click", function(evt) {
-            //     evt.preventDefault();
-            //     evt.stopPropagation();
-            //     if (addingBreakpoints) {
-            //         return;
-            //     }
-            //     addingBreakpoints = true;
-            //
-            // });
 
             var breakpointList = $('<ol>',{class:"red-ui-flow-debugger-breakpoint-list"}).appendTo(breakpointSection.content).editableList({
                 addButton: false,
@@ -454,6 +367,7 @@
                     item.listItem = row;
 
                     row.addClass("red-ui-flow-debugger-breakpoint")
+                    row.addClass("red-ui-flow-debugger-breakpoint-"+(item.location.portType === 'i'?"input":"output"))
                     var activeToggle = $('<input type="checkbox">')
                                             .prop("checked",item.active).appendTo(row)
                                             .on('change', function() {
@@ -494,13 +408,19 @@
                     }
 
                     var node = RED.nodes.node(item.location.id);
+                    var nodeLabel = $('<a href="#"></a>').appendTo(row).on('click', function(evt) {
+                        evt.preventDefault();
+                        evt.stopPropagation();
+                        RED.view.reveal(item.location.id);
+                    })
                     if (node) {
-                        item.listLabel = RED.utils.createNodeIcon(node,true).appendTo(row);
+                        item.listLabel = RED.utils.createNodeIcon(node,true).appendTo(nodeLabel);
                     } else {
-                        item.listLabel = $('<span>').text(item.location.id).appendTo(row);
+                        item.listLabel = $('<span>').text(item.location.id).appendTo(nodeLabel);
                     }
                     var bpLabel = item.location.portType === 'i'?RED._("node-red-debugger/flow-debugger:label.input"):(RED._("node-red-debugger/flow-debugger:label.output")+" "+(item.location.portIndex+1))
-                    $('<span class="red-ui-flow-debugger-breakpoint-port">').text(bpLabel).appendTo(row)
+                    RED.popover.tooltip(nodeLabel,bpLabel);
+
                     row.on("mouseenter", function() {
                         if (annotations[item.location.id]) {
                             var annotation = annotations[item.location.id][item.location.portType==='i'?"input":"output"][item.location.portIndex];
@@ -525,11 +445,61 @@
             });
             messageSection.expand();
             messageSection.content.css({height:"100%"});
+            var messageToolbar = $('<div style="float: right"></div>').appendTo(messageSection.header);
 
+            var messageFilterPanelOpen = false;
+            var messageFilterButton = $('<button class="red-ui-button red-ui-button-small"><i class="fa fa-filter"></i></button>').css({
+                "min-width": "22px"
+            }).appendTo(messageToolbar).on("click", function(evt) {
+                evt.preventDefault();
+                evt.stopPropagation();
+                if (!messageFilterPanelOpen) {
+                    messageFilterPanel.find('input[value="'+activeMessageFilterType+'"]').attr("checked",true);
+                    messageFilterButton.find("i").removeClass("fa-filter").addClass("fa-close");
+                    messageFilterPanelPopover.show({
+                        offset:[messageFilterButton.outerWidth(),2],
+                        align: 'left',
+                        target:messageFilterButton,//breakpointSection.header,
+                        dispose: false,
+                        closeButton: messageFilterButton,
+                        onclose: function() {
+                            messageFilterButton.find("i").removeClass("fa-close").addClass("fa-filter");
+                            messageFilterPanelOpen = false;
+                        }
+                    })
+                    messageFilterPanelOpen = true;
+                } else {
+                    messageFilterPanelOpen = false;
+                    messageFilterButton.find("i").removeClass("fa-close").addClass("fa-filter");
+                    messageFilterPanelPopover.hide(false);
+                }
+            });
+            var messageFilterLabel = $('<span style="margin-left: 3px"></span>').text(RED._("node-red-debugger/flow-debugger:label.filter.all")).appendTo(messageFilterButton);
+            RED.popover.tooltip(messageFilterButton,RED._("node-red-debugger/flow-debugger:label.filter.label"))
+
+            var messageFilterPanel = $('<div class="red-ui-flow-debugger-settings"></div>').css({padding: "8px"});
+            $('<label><input type="radio" class="red-ui-sidebar-header-button-toggle" name="red-ui-flow-debugger-message-filter-option" value="all"><span data-i18n="node-red-debugger/flow-debugger:label.filter.all"></span></label>').appendTo(messageFilterPanel);
+            $('<label><input type="radio" class="red-ui-sidebar-header-button-toggle" name="red-ui-flow-debugger-message-filter-option" value="flow"><span data-i18n="node-red-debugger/flow-debugger:label.filter.flow"></span></label>').appendTo(messageFilterPanel);
+            messageFilterPanel.i18n();
+            messageFilterPanel.find('input[type="radio"]').on("change", function(evt) {
+                messageFilterLabel.text(RED._("node-red-debugger/flow-debugger:label.filter."+this.value));
+                activeMessageFilterType = this.value;
+                messageList.editableList("filter");
+                messageFilterPanelOpen = false;
+                messageFilterButton.find("i").removeClass("fa-close").addClass("fa-filter");
+                messageFilterPanelPopover.hide(false);
+            });
+            var messageFilterPanelPopover = RED.popover.panel(messageFilterPanel);
+
+            var activeMessageFilterType = "all";
             var messageList = $('<ol>',{class:"red-ui-flow-debugger-message-list"}).appendTo(messageSection.content).editableList({
                 addButton: false,
+                filter: function(item) {
+                    item._visible = activeMessageFilterType === "all" || item.location.z === RED.workspaces.active();
+                    return item._visible;
+                },
                 removeItem: function(item) {
-                    var location = parseLocation(item.location);
+                    var location = item.location;
                     if (annotations[location.id]) {
                         var ann = annotations[location.id][location.portType][location.portIndex];
                         if (ann) {
@@ -538,10 +508,11 @@
                     }
                     delete queuedMessages[item.id];
                     delete messagesByNode[location.id][item.id];
+                    updateMessageList();
                 },
                 addItem: function(row, index, item) {
                     queuedMessages[item.id] = item;
-                    var location = parseLocation(item.location);
+                    var location = item.location;
                     messagesByNode[location.id] = messagesByNode[location.id] || {};
                     messagesByNode[location.id][item.id] = item;
 
@@ -564,7 +535,7 @@
                     });
 
                     var topRow = $('<div class="red-ui-debug-msg-meta"></div>').appendTo(row);
-                    var bottomRow = $('<span class="red-ui-debug-msg-payload"></span>').appendTo(row);
+                    var bottomRow = $('<span></span>').appendTo(row);
 
                     // if (!destinationLocation) {
                     //     // msg arriving at location
@@ -657,44 +628,103 @@
                             }
                         });
                     });
-
-                    if (item.msg) {
-                        var msg = RED.utils.decodeObject(item.msg.msg,item.msg.format);
-                        var el = $('<span class="red-ui-debug-msg-payload"></span>').appendTo(bottomRow);
-                        var debugMessage = RED.utils.createObjectElement(msg, {
-                            sourceId: true, // <- needed to get controls to appear
-                            path: '',
-                            // tools: function(key,value) {
-                            //     if (value && value.hasOwnProperty('__enc__')) {
-                            //         if (value.type === 'function' || value.type === 'internal') {
-                            //             return null;
-                            //         }
-                            //     }
-                            //     var tools = $('<span class="button-group"></span>');
-                            //     var editItem = $('<button class="red-ui-button red-ui-button-small"><i class="fa fa-pencil"></i></button>').appendTo(tools).on("click", function(evt) {
-                            //         evt.preventDefault();
-                            //         evt.stopPropagation();
-                            //         console.log(key,value);
-                            //
-                            //         RED.editor.editJavaScript({
-                            //             value: JSON.stringify(value,' ',4),
-                            //             complete: function(v) {
-                            //                 console.log("NEW VALUE",v)
-                            //             }
-                            //         })
-                            //
-                            //
-                            //     });
-                            //     return tools;
-                            // },
-                            key: /*true*/null });
-                        debugMessage.appendTo(el);
+                    item.messageRow = bottomRow;
+                    item.loaded = false;
+                    if (messageList.editableList('length') > MAX_MESSAGE_LOADED) {
+                        // This isn't going to get instantly loaded, so add the
+                        // click-to-load button
+                        var loading = false;
+                        bottomRow.addClass("red-ui-flow-debugger-message-load")
+                        $('<a href="#">').text("show message").appendTo(bottomRow).on("click", function(evt) {
+                            evt.preventDefault();
+                            if (!loading) {
+                                loading = true;
+                                loadMessage(item);
+                            }
+                        });
                     }
 
-
+                    updateMessageList();
                 }
             })
 
+            RED.events.on("workspace:change", function() {
+                if (activeMessageFilterType === "flow") {
+                    messageList.editableList("filter");
+                    updateMessageList();
+                }
+            });
+
+            var updateMessageListTimer;
+            function updateMessageList() {
+                if (!debuggerEnabled) {
+                    return;
+                }
+                if (!updateMessageListTimer) {
+                    updateMessageListTimer = setTimeout(function() {
+                        updateMessageListTimer = null;
+                        var visibleCount = 0;
+                        messageList.editableList('items').each(function(index) {
+                            var item = $(this).data('data');
+                            if (item._visible) {
+                                visibleCount++;
+                            }
+                            if (visibleCount <= MAX_MESSAGE_LOADED) {
+                                if (!item.loaded) {
+                                    loadMessage(item)
+                                }
+                            }
+                        })
+                    },100)
+                }
+            }
+            function loadMessage(item) {
+                $.ajax({
+                    url: "flow-debugger/messages/"+item.id,
+                    type:"GET",
+                    success: function(message) {
+                        item.loaded = true;
+                        insertMessage(item, message);
+                    },
+                    error: function(jqXHR,textStatus,errorThrown) {
+                        console.log(jqXHR,textStatus,errorThrown);
+                    }
+                });
+            }
+            function insertMessage(item,message) {
+                item.messageRow.empty();
+                item.messageRow.addClass('red-ui-debug-msg-payload').removeClass('red-ui-flow-debugger-message-load');
+                var msg = RED.utils.decodeObject(message.msg.msg,message.msg.format);
+                var el = $('<span class="red-ui-debug-msg-payload"></span>').appendTo(item.messageRow);
+                var debugMessage = RED.utils.createObjectElement(msg, {
+                    sourceId: true, // <- needed to get controls to appear
+                    path: '',
+                    // tools: function(key,value) {
+                    //     if (value && value.hasOwnProperty('__enc__')) {
+                    //         if (value.type === 'function' || value.type === 'internal') {
+                    //             return null;
+                    //         }
+                    //     }
+                    //     var tools = $('<span class="button-group"></span>');
+                    //     var editItem = $('<button class="red-ui-button red-ui-button-small"><i class="fa fa-pencil"></i></button>').appendTo(tools).on("click", function(evt) {
+                    //         evt.preventDefault();
+                    //         evt.stopPropagation();
+                    //         console.log(key,value);
+                    //
+                    //         RED.editor.editJavaScript({
+                    //             value: JSON.stringify(value,' ',4),
+                    //             complete: function(v) {
+                    //                 console.log("NEW VALUE",v)
+                    //             }
+                    //         })
+                    //
+                    //
+                    //     });
+                    //     return tools;
+                    // },
+                    key: /*true*/null });
+                debugMessage.appendTo(el);
+            }
             function pauseDebugger() {
                 $("#red-ui-workspace").addClass("red-ui-flow-debugger-paused");
                 $(".red-ui-flow-debugger-btn-pauseresume i").removeClass("fa-pause").addClass("fa-play");
@@ -717,16 +747,23 @@
 
                     pausedNotification = RED.notify(notificationContent,{fixed: true});
                 }
-                debuggerState.paused = true;
+                var allPaused = pausedLocations.has("*");
+                RED.nodes.eachNode(function(n) {
+                    n._debugger_paused = allPaused || pausedLocations.has(n.id);
+                })
+                RED.view.redraw();
             }
             function resumeDebugger() {
                 if (pausedNotification) {
                     pausedNotification.close();
                     pausedNotification = null;
                 }
+                pausedLocations.clear();
                 $(".red-ui-flow-debugger-btn-pauseresume i").removeClass("fa-play").addClass("fa-pause");
                 $(".red-ui-flow-debugger-btn-step").prop("disabled",true);
                 debuggerState.paused = false;
+                RED.nodes.eachNode(function(n) { delete n._debugger_paused })
+                RED.view.redraw();
             }
             RED.events.on("nodes:add",onNodeChange);
             RED.events.on("nodes:remove",onNodeRemove);
@@ -736,14 +773,26 @@
             // RED.comms.subscribe("flow-debugger/#", function(topic, msg) {
             //     console.log(">",topic,msg)
             // })
-            RED.comms.subscribe("flow-debugger/state", function(topic, msg) {
-                handleStateUpdate(msg);
+            RED.comms.subscribe("flow-debugger/connected", function(topic, msg) {
+                refreshState(true);
             });
+            RED.comms.subscribe("flow-debugger/state", function(topic, msg) {
+                handleStateUpdate(msg)
+            });
+
             RED.comms.subscribe("flow-debugger/paused", function(topic, msg) {
+                if (msg.pausedLocations) {
+                    pausedLocations = new Set(msg.pausedLocations);
+                } else {
+                    pausedLocations.clear();
+                    pausedLocations.add("*");
+                }
+                debuggerState.paused = pausedLocations.size > 0;
                 pauseDebugger();
             })
             RED.comms.subscribe("flow-debugger/resumed", resumeDebugger);
             RED.comms.subscribe("flow-debugger/messageQueued", function(topic, msg) {
+                msg.location = parseLocation(msg.location);
                 updateQueueDepth(msg.location,msg.depth);
                 messageList.editableList('addItem', {
                     id: msg.id,
@@ -753,6 +802,7 @@
                 })
             })
             RED.comms.subscribe("flow-debugger/messageDispatched", function(topic, msg) {
+                msg.location = parseLocation(msg.location);
                 updateQueueDepth(msg.location,msg.depth);
                 var message = queuedMessages[msg.id];
                 if (message) {
@@ -772,27 +822,23 @@
                 debuggerEnabledToggle.prop("checked", false).trigger("change");
             });
 
-            $.ajax({
-                url: "flow-debugger/state",
-                type:"GET",
-                success: function(state) {
-                    handleStateUpdate(state);
-                },
-                error: function(jqXHR,textStatus,errorThrown) {
-                    console.log(jqXHR,textStatus,errorThrown);
-                }
-            });
-
             function disableDebugger() {
                 breakpointList.editableList('empty');
                 messageList.editableList('empty');
                 RED.hooks.remove("*.flow-debugger");
-                $(".red-ui-flow-debugger-port-overlay").remove();
+                $(".red-ui-flow-debugger-port-overlay").each(function() {
+                    var portGroup = $(this).parent()[0];
+                    portGroup.removeEventListener("mouseenter", portGroup.__breakpoint__.onenter )
+                    portGroup.removeEventListener("mouseleave", portGroup.__breakpoint__.onleave )
+                    $(this).remove();
+                });
                 breakpoints = {};
                 breakpointsByNode = {};
                 annotations = {};
                 queueDepths = {};
                 queuedMessages = {};
+
+                RED.view.annotations.unregister("red-ui-flow-debugger-paused")
             }
             function enableDebugger() {
                 RED.hooks.add("viewAddPort.flow-debugger", function(evt) {
@@ -804,24 +850,31 @@
                 RED.hooks.add("viewRemoveNode.flow-debugger", function(evt) {
                     delete annotations[evt.node.id];
                 })
-                annotateFlow();
 
-                $.ajax({
-                    url: "flow-debugger/messages",
-                    type:"GET",
-                    success: function(messages) {
-                        messages.forEach(function(msg) {
-                            messageList.editableList('addItem', {
-                                id: msg.id,
-                                location: msg.location,
-                                msg: msg.msg
-                            })
-                        })
-                    },
-                    error: function(jqXHR,textStatus,errorThrown) {
-                        console.log(jqXHR,textStatus,errorThrown);
+                RED.view.annotations.register("red-ui-flow-debugger-paused",{
+                    type: "badge",
+                    class: "red-ui-flow-debugger-annotation-paused",
+                    show: "_debugger_paused",
+                    element: function() {
+                        var buttonGroup = document.createElementNS("http://www.w3.org/2000/svg","g");
+                        buttonGroup.setAttribute("transform","translate(0,-2)")
+                        var pauseButton = document.createElementNS("http://www.w3.org/2000/svg","rect");
+                        pauseButton.setAttribute("rx",2);
+                        pauseButton.setAttribute("width",12)
+                        pauseButton.setAttribute("height",12)
+                        pauseButton.setAttribute("fill","white")
+                        pauseButton.setAttribute("stroke-width","1")
+
+                        var pauseLogo = document.createElementNS("http://www.w3.org/2000/svg","path");
+                        pauseLogo.setAttribute("d","M 4 2 v 8 M 8 2 v 8")
+                        pauseLogo.setAttribute("stroke-width","3")
+
+                        buttonGroup.appendChild(pauseButton)
+                        buttonGroup.appendChild(pauseLogo)
+                        return buttonGroup;
                     }
-                });
+                })
+                annotateFlow();
             }
             function annotatePorts(ports) {
                 $(ports).each(function() {
@@ -914,27 +967,30 @@
                     }
                 }
                 portGroup.insertBefore(overlay, portGroup.children[0]);
-                portGroup.addEventListener("mouseenter", function() {
-                    if (RED.view.state() === RED.state.DEFAULT) {
-                        if (!self.breakpoint) {
-                            overlay.classList.add("pending");
+                portGroup.__breakpoint__ = {
+                    onenter: function() {
+                        if (RED.view.state() === RED.state.DEFAULT) {
+                            if (!self.breakpoint) {
+                                overlay.classList.add("pending");
+                            }
+                        }
+                        if (self.breakpoint) {
+                            self.breakpoint.listItem.parent().addClass("highlight")
+                        }
+                    },
+                    onleave: function() {
+                        overlay.classList.remove("pending");
+                        if (self.breakpoint) {
+                            self.breakpoint.listItem.parent().removeClass("highlight")
+                            if (self.pendingRemoval) {
+                                delete self.pendingRemoval;
+                                breakpointList.editableList("removeItem", self.breakpoint);
+                            }
                         }
                     }
-                    if (self.breakpoint) {
-                        self.breakpoint.listItem.parent().addClass("highlight")
-                    }
-                })
-                portGroup.addEventListener("mouseleave", function() {
-                    overlay.classList.remove("pending");
-                    if (self.breakpoint) {
-                        self.breakpoint.listItem.parent().removeClass("highlight")
-                        if (self.pendingRemoval) {
-                            delete self.pendingRemoval;
-                            breakpointList.editableList("removeItem", self.breakpoint);
-                        }
-                    }
-
-                })
+                }
+                portGroup.addEventListener("mouseenter", portGroup.__breakpoint__.onenter )
+                portGroup.addEventListener("mouseleave", portGroup.__breakpoint__.onleave )
                 overlay.addEventListener("click", function() {
                     if (self.breakpoint) {
                         if (self.breakpoint.active) {
