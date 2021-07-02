@@ -1,0 +1,27 @@
+{
+    "label": {
+        "debugger": "フローデバッガ",
+        "debuggerShort": "デバッガ",
+        "breakpoints": "ブレイクポイント",
+        "messages": "メッセージ",
+        "output": "出力",
+        "input": "入力",
+        "paused": "フローを停止しました",
+        "resume": "フローを再開",
+        "step": "フローをステップ実行",
+        "pause": "フローを停止",
+        "deleteMessage": "メッセージを削除",
+        "stepMessage": "メッセージをステップ実行",
+        "filter": {
+            "label": "メッセージの絞り込み",
+            "all": "全てのノード",
+            "flow": "現在のフロー"
+        },
+        "settings": "デバッガオプション",
+        "breakpointAction": {
+            "label": "ブレイクポイントの動作",
+            "pause-all": "全てのノードを停止",
+            "pause-bp": "ブレイクポイントで停止"
+        }
+    }
+}

@@ -610,14 +610,19 @@
                     }
 
                     var tools = $('<span class="red-ui-flow-debugger-msg-tools button-group"></span>').appendTo(topRow);
-                    var stepItem = $('<button class="red-ui-button red-ui-button-small"><i class="fa fa-step-forward"></i></button>').appendTo(tools).on("click", function(evt) {
+                    var stepItem = $('<button class="red-ui-button red-ui-button-small"><i class="fa fa-step-forward"></i></button>').appendTo(tools);
+                    var stepMessage = RED.popover.tooltip(stepItem, RED._("node-red-debugger/flow-debugger:label.stepMessage"));
+                    stepItem.on("click", function(evt) {
                         evt.preventDefault();
                         evt.stopPropagation();
                         postCommand("step",{message: item.id})
                         messageList.editableList("removeItem",item);
+                        stepMessage.close();
                     });
 
-                    var deleteItem = $('<button class="red-ui-button red-ui-button-small"><i class="fa fa-trash"></i></button>').appendTo(tools).on("click", function(evt) {
+                    var deleteItem = $('<button class="red-ui-button red-ui-button-small"><i class="fa fa-trash"></i></button>').appendTo(tools);
+                    var deleteMessage = RED.popover.tooltip(deleteItem, RED._("node-red-debugger/flow-debugger:label.deleteMessage"));
+                    deleteItem .on("click", function(evt) {
                         evt.preventDefault();
                         evt.stopPropagation();
                         $.ajax({
@@ -627,6 +632,7 @@
                                 console.log(jqXHR,textStatus,errorThrown);
                             }
                         });
+                        deleteMessage.close();
                     });
                     item.messageRow = bottomRow;
                     item.loaded = false;
