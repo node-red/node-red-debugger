@@ -4,6 +4,7 @@
  - Allow debugger to pause just breakpoint nodes
  - Better display >99 message queue count on node annotation
  - Publish debugger state as retained to make resync easier
+ - Add Japanese translations (#7) @kazuhitoyokoi
 
 ### 1.0.1
 
