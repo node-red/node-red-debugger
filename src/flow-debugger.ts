@@ -28,6 +28,7 @@ module.exports = (RED:any) => {
             flowDebugger.on("messageQueued", (event) => {
                 // Don't include the full message on the event
                 // event.msg = RED.util.encodeObject({msg:event.msg}, {maxLength: 100});
+                delete event.msg;
                 RED.comms.publish("flow-debugger/messageQueued",event)
             });
             flowDebugger.on("messageDispatched", (event) => {
