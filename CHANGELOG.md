@@ -1,3 +1,7 @@
+### 1.1.1
+
+ - Do not send full message object in messageQueued event Fixes #8
+
 ### 1.1.0
 
  - Require Node-RED 2.0.0-beta.2
